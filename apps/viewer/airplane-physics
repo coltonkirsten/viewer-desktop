@@ -1,0 +1,11 @@
+{
+  "forces": {
+    "lift": 10000,
+    "weight": 9800,
+    "thrust": 5000,
+    "drag": 4500
+  },
+  "bankAngle": -34,
+  "showComponents": true,
+  "showNetForce": false
+}

@@ -1,0 +1,140 @@
+{
+  "name": "New Workspace",
+  "description": "",
+  "version": "1.0",
+  "templates": [
+    {
+      "id": "code-review",
+      "name": "Code Review",
+      "description": "Review code for bugs, security issues, and improvements",
+      "icon": "Search",
+      "color": "#4ec5ff",
+      "prompt": "Review the following file for bugs, security issues, and potential improvements: {{filepath}}",
+      "cliFlags": {
+        "print": true,
+        "model": "sonnet",
+        "maxTurns": 5
+      },
+      "variables": [
+        {
+          "name": "filepath",
+          "description": "Path to the file to review",
+          "required": true
+        }
+      ],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T00:13:52.270Z",
+      "updatedAt": "2025-12-04T00:13:52.271Z",
+      "tags": [
+        "review",
+        "quality"
+      ]
+    },
+    {
+      "id": "test-runner",
+      "name": "Test Runner",
+      "description": "Run tests and fix any failures found",
+      "icon": "TestTube",
+      "color": "#6de3b6",
+      "prompt": "Run the test suite. If any tests fail, analyze the failures and fix them.",
+      "cliFlags": {
+        "print": false,
+        "model": "sonnet",
+        "maxTurns": 15
+      },
+      "variables": [],
+      "preCommands": [
+        {
+          "id": "pre-1",
+          "command": "git stash",
+          "description": "Stash uncommitted changes"
+        }
+      ],
+      "postCommands": [
+        {
+          "id": "post-1",
+          "command": "git stash pop",
+          "description": "Restore stashed changes",
+          "continueOnFail": true
+        }
+      ],
+      "createdAt": "2025-12-04T00:13:52.271Z",
+      "updatedAt": "2025-12-04T00:13:52.271Z",
+      "tags": [
+        "testing",
+        "fix"
+      ]
+    },
+    {
+      "id": "task-creator",
+      "name": "Task Creator",
+      "description": "Meta-task: Create a new agent task template",
+      "icon": "Wand",
+      "color": "#f5c76b",
+      "prompt": "Create a detailed task template for the following task: {{description}}\n\nThe template should include:\n- An appropriate name and description\n- The main prompt with any necessary variable placeholders using {{variableName}} syntax\n- Appropriate CLI flags (model, maxTurns, print mode, etc.)\n- Any useful pre-commands or post-commands\n- Variable definitions with descriptions\n\nOutput the template as a JSON object that matches this structure:\n{\n  \"name\": \"...\",\n  \"description\": \"...\",\n  \"prompt\": \"...\",\n  \"cliFlags\": { ... },\n  \"variables\": [ ... ],\n  \"preCommands\": [ ... ],\n  \"postCommands\": [ ... ]\n}",
+      "cliFlags": {
+        "print": true,
+        "model": "opus"
+      },
+      "variables": [
+        {
+          "name": "description",
+          "description": "Description of the task you want to create",
+          "required": true
+        }
+      ],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T00:13:52.271Z",
+      "updatedAt": "2025-12-04T00:13:52.271Z",
+      "tags": [
+        "meta",
+        "automation"
+      ]
+    },
+    {
+      "id": "1764808085458-p4ss4lry6",
+      "name": "New Task",
+      "description": "test",
+      "icon": "Sparkles",
+      "color": "#4ec5ff",
+      "prompt": "",
+      "cliFlags": {
+        "print": true,
+        "model": "sonnet",
+        "maxTurns": 10
+      },
+      "variables": [],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T00:28:05.458Z",
+      "updatedAt": "2025-12-04T00:28:07.592Z",
+      "tags": []
+    },
+    {
+      "id": "1764808091053-vser692hy",
+      "name": "New Task",
+      "description": "test2",
+      "icon": "Sparkles",
+      "color": "#4ec5ff",
+      "prompt": "",
+      "cliFlags": {
+        "print": true,
+        "model": "sonnet",
+        "maxTurns": 10
+      },
+      "variables": [],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T00:28:11.053Z",
+      "updatedAt": "2025-12-04T00:28:13.636Z",
+      "tags": []
+    }
+  ],
+  "queue": [],
+  "history": [],
+  "historyLimit": 100,
+  "createdAt": "2025-12-04T00:27:37.465Z",
+  "updatedAt": "2025-12-04T00:28:14.984Z"
+}

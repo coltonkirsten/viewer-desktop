@@ -1,0 +1,217 @@
+{
+  "name": "New Workspace",
+  "version": "1.0",
+  "templates": [
+    {
+      "id": "code-review",
+      "name": "Code Review",
+      "description": "Review code for bugs, security issues, and improvements",
+      "icon": "Search",
+      "color": "#4ec5ff",
+      "prompt": "Review the following file for bugs, security issues, and potential improvements: {{filepath}}",
+      "cliFlags": {
+        "print": true,
+        "model": "sonnet",
+        "maxTurns": 5
+      },
+      "variables": [
+        {
+          "name": "filepath",
+          "description": "Path to the file to review",
+          "required": true
+        }
+      ],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T01:04:37.013Z",
+      "updatedAt": "2025-12-04T01:04:37.013Z",
+      "tags": [
+        "review",
+        "quality"
+      ]
+    },
+    {
+      "id": "test-runner",
+      "name": "Test Runner",
+      "description": "Run tests and fix any failures found",
+      "icon": "TestTube",
+      "color": "#6de3b6",
+      "prompt": "Run the test suite. If any tests fail, analyze the failures and fix them.",
+      "cliFlags": {
+        "print": false,
+        "model": "sonnet",
+        "maxTurns": 15
+      },
+      "variables": [],
+      "preCommands": [
+        {
+          "id": "pre-1",
+          "command": "git stash",
+          "description": "Stash uncommitted changes"
+        }
+      ],
+      "postCommands": [
+        {
+          "id": "post-1",
+          "command": "git stash pop",
+          "description": "Restore stashed changes",
+          "continueOnFail": true
+        }
+      ],
+      "createdAt": "2025-12-04T01:04:37.013Z",
+      "updatedAt": "2025-12-04T01:04:37.013Z",
+      "tags": [
+        "testing",
+        "fix"
+      ]
+    },
+    {
+      "id": "task-creator",
+      "name": "Task Creator",
+      "description": "Meta-task: Create a new agent task template",
+      "icon": "Wand",
+      "color": "#f5c76b",
+      "prompt": "Create a detailed task template for the following task: {{description}}\n\nThe template should include:\n- An appropriate name and description\n- The main prompt with any necessary variable placeholders using {{variableName}} syntax\n- Appropriate CLI flags (model, maxTurns, print mode, etc.)\n- Any useful pre-commands or post-commands\n- Variable definitions with descriptions\n\nOutput the template as a JSON object that matches this structure:\n{\n  \"name\": \"...\",\n  \"description\": \"...\",\n  \"prompt\": \"...\",\n  \"cliFlags\": { ... },\n  \"variables\": [ ... ],\n  \"preCommands\": [ ... ],\n  \"postCommands\": [ ... ]\n}",
+      "cliFlags": {
+        "print": true,
+        "model": "opus"
+      },
+      "variables": [
+        {
+          "name": "description",
+          "description": "Description of the task you want to create",
+          "required": true
+        },
+        {
+          "name": "cli_ref",
+          "description": "reference to available cli commands",
+          "required": false
+        }
+      ],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T01:04:37.013Z",
+      "updatedAt": "2025-12-04T01:23:54.166Z",
+      "tags": [
+        "meta",
+        "automation"
+      ]
+    },
+    {
+      "id": "1764810421300-3flcw85fm",
+      "name": "New Task",
+      "description": "hello world",
+      "icon": "Sparkles",
+      "color": "#4ec5ff",
+      "prompt": "simply respond with 'hello world'",
+      "cliFlags": {
+        "print": true,
+        "model": "sonnet",
+        "maxTurns": 10
+      },
+      "variables": [],
+      "preCommands": [],
+      "postCommands": [],
+      "createdAt": "2025-12-04T01:07:01.300Z",
+      "updatedAt": "2025-12-04T01:07:13.195Z",
+      "tags": []
+    },
+    {
+      "id": "create-viewer-app",
+      "name": "Create Viewer App",
+      "description": "Creates a new app in the viewer system following the holographic design guidelines and architecture patterns",
+      "icon": "Layout",
+      "color": "#4a9eff",
+      "prompt": "Create a new app called '{{appName}}' in the viewer system.\n\n## App Details\n- **App ID**: {{appId}}\n- **Display Name**: {{appName}}\n- **appType**:{{appType}}\n- **Description**: {{appDescription}}\n- **File Extensions**: {{fileExtensions}}\n\n## Requirements\n\nFollow the guidelines in /Users/coltonkirsten/Desktop/root/apps/viewer/AGENTS.md exactly.\n\n### File Structure\nCreate these files in `src/apps/{{appId}}/`:\n1. `index.ts` - App definition exporting `app: AppDefinition`\n2. `{{componentName}}.tsx` - Main React component\n\n### Implementation Checklist\n- [ ] Use holographic color variables (--holo-bg, --holo-panel, --holo-border, --holo-accent, --holo-text, --holo-muted)\n- [ ] Container fills height with `h-full w-full flex flex-col`\n- [ ] Guard keyboard shortcuts with `if (!isActive) return`\n- [ ] Implement arrow key navigation for lists/grids if applicable\n- [ ] Add sound feedback using `useSound` hook for interactions\n- [ ] Track dirty state with `setDirty()` if file-based\n- [ ] Handle external file changes with `useFileWatcher` if file-based\n- [ ] Implement loading and error states\n- [ ] Add transitions on interactive elements (`transition-colors`, `transition-all`)\n\n### Design System\n- Backgrounds: `bg-[var(--holo-bg)]`, `bg-[var(--holo-panel)]`\n- Borders: `border border-[var(--holo-border)]`\n- Glass effect: `bg-[rgba(20,20,30,0.8)] backdrop-blur-[12px]`\n- Accent buttons: `bg-[var(--holo-accent)]/20 text-[var(--holo-accent)]`\n- Glow effects: `shadow-[0_0_10px_rgba(100,150,255,0.08)]`",
+      "cliFlags": {
+        "print": false,
+        "model": "haiku",
+        "maxTurns": 20,
+        "appendSystemPrompt": "You are creating a viewer app. Always follow the holographic design system. Use semantic color variables, never hardcode colors. Ensure all keyboard handlers check isActive. Include sound feedback for user interactions. Reference existing apps in src/apps/ for patterns.",
+        "allowedTools": [],
+        "addDir": []
+      },
+      "variables": [
+        {
+          "name": "appName",
+          "description": "Display name shown in Cmd+P search and window title (e.g., 'Task Manager', 'Image Gallery')",
+          "required": true
+        },
+        {
+          "name": "appId",
+          "description": "Unique identifier in kebab-case (e.g., 'task-manager', 'image-gallery')",
+          "required": true
+        },
+        {
+          "name": "appDescription",
+          "description": "Brief description of what the app does",
+          "required": true
+        },
+        {
+          "name": "appType",
+          "description": "Whether the app is 'file-based' (opens/saves files) or 'standalone' (no file association)",
+          "required": true
+        },
+        {
+          "name": "fileExtensions",
+          "description": "Comma-separated file extensions this app handles (only for file-based apps, e.g., 'md,txt')",
+          "defaultValue": "none",
+          "required": false
+        }
+      ],
+      "preCommands": [
+        {
+          "id": "pre-mkdir",
+          "command": "mkdir -p /Users/coltonkirsten/Desktop/root/apps/viewer/src/apps/{{appId}}",
+          "description": "Create the app directory"
+        }
+      ],
+      "postCommands": [
+        {
+          "id": "post-build",
+          "command": "cd /Users/coltonkirsten/Desktop/root/apps/viewer && npm run build",
+          "description": "Build the viewer to verify the app compiles correctly",
+          "continueOnFail": true
+        },
+        {
+          "id": "post-lint",
+          "command": "cd /Users/coltonkirsten/Desktop/root/apps/viewer && npm run lint -- --fix",
+          "description": "Run linter and auto-fix issues",
+          "continueOnFail": true
+        }
+      ],
+      "createdAt": "2025-12-04T02:00:00.000Z",
+      "updatedAt": "2025-12-04T01:40:01.243Z",
+      "tags": [
+        "viewer",
+        "app",
+        "development",
+        "holographic"
+      ]
+    }
+  ],
+  "queue": [],
+  "history": [
+    {
+      "id": "1764811477557-tzgr2z5qt",
+      "templateId": "1764810421300-3flcw85fm",
+      "templateName": "New Task",
+      "resolvedVariables": {
+        "timestamp": "2025-12-04T01:24:37.556Z",
+        "date": "2025-12-04"
+      },
+      "resolvedPrompt": "simply respond with 'hello world'",
+      "fullCommand": "claude -p --model sonnet --max-turns 10 'simply respond with '\\''hello world'\\'''",
+      "status": "completed",
+      "terminalSessionId": "terminal-7",
+      "preCommandResults": [],
+      "postCommandResults": [],
+      "claudeOutput": "claude -p --model sonnet --max-turns 10 'simply respond with '\\''hello world'\\'''\r\nRestored session: Wed Dec  3 17:16:01 PST 2025\r\n\u001b[1m\u001b[7m%\u001b[27m\u001b[1m\u001b[0m                                                                                                                      \r \r\u001b]7;file://Coltons-MacBook-Pro-2.local/Users/coltonkirsten/Desktop/root\u0007\r\u001b[0m\u001b[27m\u001b[24m\u001b[Jcoltonkirsten@Coltons-MacBook-Pro-2 root % \u001b[K\u001b[?2004hc\bclaude -p --model sonnet --max-turns 10 'simply respond with '\\''hello world \r\u001b[K'\r'\\'''\u001b[?2004l\r\r\nhello world\r\n\u001b[?25h\u001b[?25h\u001b[1m\u001b[7m%\u001b[27m\u001b[1m\u001b[0m                                                                                                                      \r \r\u001b]7;file://Coltons-MacBook-Pro-2.local/Users/coltonkirsten/Desktop/root\u0007\r\u001b[0m\u001b[27m\u001b[24m\u001b[Jcoltonkirsten@Coltons-MacBook-Pro-2 root % \u001b[K\u001b[?2004h",
+      "startedAt": "2025-12-04T01:24:37.557Z",
+      "completedAt": "2025-12-04T01:24:51.700Z"
+    }
+  ],
+  "historyLimit": 100,
+  "createdAt": "2025-12-04T01:05:18.724Z",
+  "updatedAt": "2025-12-04T01:40:04.716Z"
+}

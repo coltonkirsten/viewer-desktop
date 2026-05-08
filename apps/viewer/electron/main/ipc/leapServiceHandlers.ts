@@ -1,0 +1,128 @@
+import { ipcMain } from 'electron';
+import { spawn, type ChildProcess } from 'child_process';
+import { existsSync } from 'fs';
+import net from 'net';
+
+const LEAP_SERVICE_PATH =
+  '/Users/coltonkirsten/Desktop/root/UltraleapTrackingWebSocket/build/Ultraleap-Tracking-WS';
+const LEAP_SERVICE_PORT = 6437;
+const SOCKET_TIMEOUT_MS = 350;
+
+interface LeapServiceStatus {
+  running: boolean;
+  managed: boolean;
+  pid: number | null;
+  path: string;
+}
+
+let leapProcess: ChildProcess | null = null;
+
+function isManagedProcessRunning(): boolean {
+  return Boolean(leapProcess && leapProcess.exitCode === null && !leapProcess.killed);
+}
+
+function isPortOpen(port: number, host = '127.0.0.1'): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    let settled = false;
+
+    const finish = (open: boolean) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve(open);
+    };
+
+    socket.setTimeout(SOCKET_TIMEOUT_MS);
+    socket.once('connect', () => finish(true));
+    socket.once('timeout', () => finish(false));
+    socket.once('error', () => finish(false));
+    socket.connect(port, host);
+  });
+}
+
+async function getServiceStatus(): Promise<LeapServiceStatus> {
+  const managedRunning = isManagedProcessRunning();
+  if (managedRunning) {
+    return {
+      running: true,
+      managed: true,
+      pid: leapProcess?.pid ?? null,
+      path: LEAP_SERVICE_PATH,
+    };
+  }
+
+  const externalRunning = await isPortOpen(LEAP_SERVICE_PORT);
+  return {
+    running: externalRunning,
+    managed: false,
+    pid: null,
+    path: LEAP_SERVICE_PATH,
+  };
+}
+
+async function startManagedService(): Promise<LeapServiceStatus> {
+  if (isManagedProcessRunning()) {
+    return getServiceStatus();
+  }
+
+  if (!existsSync(LEAP_SERVICE_PATH)) {
+    throw new Error(`Leap service binary not found: ${LEAP_SERVICE_PATH}`);
+  }
+
+  const alreadyRunning = await isPortOpen(LEAP_SERVICE_PORT);
+  if (alreadyRunning) {
+    return getServiceStatus();
+  }
+
+  leapProcess = spawn(LEAP_SERVICE_PATH, [], {
+    stdio: 'ignore',
+  });
+
+  leapProcess.once('exit', () => {
+    leapProcess = null;
+  });
+
+  return getServiceStatus();
+}
+
+async function stopManagedService(): Promise<LeapServiceStatus> {
+  if (isManagedProcessRunning()) {
+    try {
+      leapProcess?.kill('SIGTERM');
+    } catch (error) {
+      console.error('Failed to stop Leap service process:', error);
+    }
+  }
+
+  leapProcess = null;
+  return getServiceStatus();
+}
+
+export function registerLeapServiceHandlers(): void {
+  ipcMain.handle('leap:status', async () => {
+    return getServiceStatus();
+  });
+
+  ipcMain.handle('leap:ensureService', async (_, enabled: boolean) => {
+    if (enabled) {
+      return startManagedService();
+    }
+    return stopManagedService();
+  });
+}
+
+export function cleanupLeapServiceHandlers(): void {
+  if (!isManagedProcessRunning()) {
+    leapProcess = null;
+    return;
+  }
+
+  try {
+    leapProcess?.kill('SIGTERM');
+  } catch (error) {
+    console.error('Failed to cleanup Leap service process:', error);
+  } finally {
+    leapProcess = null;
+  }
+}
