@@ -1,10 +1,14 @@
 import { ipcMain } from 'electron';
 import { spawn, type ChildProcess } from 'child_process';
 import { existsSync } from 'fs';
+import path from 'path';
 import net from 'net';
 
+// Override with VIEWER_LEAP_SERVICE_PATH env var if your build lives elsewhere.
+// Default points at the bundled UltraleapTrackingWebSocket build relative to the repo root.
 const LEAP_SERVICE_PATH =
-  '/Users/coltonkirsten/Desktop/root/UltraleapTrackingWebSocket/build/Ultraleap-Tracking-WS';
+  process.env.VIEWER_LEAP_SERVICE_PATH ||
+  path.resolve(__dirname, '../../../../../UltraleapTrackingWebSocket/build/Ultraleap-Tracking-WS');
 const LEAP_SERVICE_PORT = 6437;
 const SOCKET_TIMEOUT_MS = 350;
 
