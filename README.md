@@ -39,6 +39,8 @@ See [`AGENTS.md`](./AGENTS.md) for the in-repo conventions used by AI agents.
 
 ## Getting Started
 
+> **In a hurry?** See [QUICKSTART.md](./QUICKSTART.md) for a 5-minute path from clone to running.
+
 ### Prerequisites
 
 - Node.js 18+ and npm
