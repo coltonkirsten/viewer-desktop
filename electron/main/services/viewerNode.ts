@@ -15,7 +15,7 @@
  * retirement once mesh integration is proven end-to-end.
  */
 import { execFile } from 'node:child_process'
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -107,6 +107,16 @@ export interface ViewerNodeDeps {
    * `start()`: `node.invoke(target, payload, { wait: false })`.
    */
   meshEmit?: (target: string, payload: Record<string, unknown>) => Promise<void>
+  /**
+   * Returns the open workspace root, or null if no workspace is open. Inline
+   * `open_view` sources are materialized to a temp file the renderer reads via
+   * the sandboxed `fs:readFile`, which only allows paths inside this root. When
+   * a root is present, inline temp files are written under `<root>/.viewer-tmp/`
+   * so they pass the sandbox; otherwise we fall back to os.tmpdir() (the path
+   * read will be denied if the sandbox is active, but this keeps tests — which
+   * don't open a workspace — working unchanged).
+   */
+  getRootDir?: () => string | null
 }
 
 export interface ViewerNode {
@@ -152,7 +162,19 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
     const source = view.source
     if (source.kind === 'path') return source.value
     if (source.kind === 'inline') {
-      const dir = await mkdtemp(join(tmpdir(), 'viewer-view-'))
+      // Materialize inline content to a temp file the renderer reads via the
+      // sandboxed fs:readFile. That read only permits paths inside the open
+      // workspace root, so when a root is present we stage under
+      // <root>/.viewer-tmp/ to pass the sandbox; otherwise fall back to
+      // os.tmpdir() (preserves prior behavior when no workspace is open).
+      const root = deps.getRootDir?.() ?? null
+      let dir: string
+      if (root) {
+        dir = join(root, '.viewer-tmp')
+        await mkdir(dir, { recursive: true })
+      } else {
+        dir = await mkdtemp(join(tmpdir(), 'viewer-view-'))
+      }
       const file = join(dir, `${sanitizeIdForFilename(view.id)}.${ext}`)
       await writeFile(file, source.value, 'utf8')
       return file

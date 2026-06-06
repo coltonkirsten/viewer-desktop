@@ -250,6 +250,9 @@ app.whenReady().then(() => {
     viewerNode = createViewerNode({
       dispatch: (action, params) => executeViewerControl(mainWindow, action, params),
       secret: meshSecret,
+      // Inline open_view sources are staged under <rootDir>/.viewer-tmp/ so the
+      // renderer's sandboxed fs:readFile (root-only) can read them.
+      getRootDir: () => rootDir,
     });
     viewerNode.start().catch(err => console.error('[viewerNode] Failed to start:', err));
 
