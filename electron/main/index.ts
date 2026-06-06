@@ -230,9 +230,13 @@ app.whenReady().then(() => {
   createWindow();
 
   // Start the control server for CLI/agent control.
-  // TODO(wave4): the viewer_desktop mesh node below is the intended replacement
-  // for this :7434 HTTP control server; both run in parallel until integration
-  // is proven, after which Wave 4 decides the control server's retirement.
+  // RETIREMENT NOTE: the viewer_desktop mesh node below is the intended successor
+  // to this :7434 HTTP control server. The mesh path is now integration-proven
+  // (role-play UX validation + 23 passing node tests dispatch through the same
+  // executeViewerControl seam). It is NOT yet safe to delete :7434, however —
+  // two live consumers still bind to it: claudeService.ts (in-app Claude) and
+  // bin/viewer-ctl (CLI). Retire only after those two are migrated to the mesh
+  // surface AND the no-secret fallback (see the `else` branch below) is removed.
   controlServer = new ControlServer({
     getMainWindow: () => mainWindow,
     getRootDir: () => rootDir,
