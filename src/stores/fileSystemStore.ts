@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import type { FileNode } from '../types';
 import { soundEngine } from '../audio';
 
-// Helper to immutably update a node in the tree
+// Helper to immutably update a node in the tree.
+//
+// Recurses down the branch whose path prefixes the target. The recursion guard
+// uses the path prefix ALONE (not `tree.children` truthiness): a directory whose
+// children have not been materialized yet still has `children: undefined`, and
+// the old `tree.children && ...` guard caused inserts into deeper descendants to
+// be silently dropped — the root cause of the "folders only go to certain depths"
+// bug. We now only short-circuit when there are genuinely no children to walk.
 function updateTreeNode(
   tree: FileNode,
   targetPath: string,
@@ -12,7 +19,14 @@ function updateTreeNode(
     return updater(tree);
   }
 
-  if (tree.children && targetPath.startsWith(tree.path + '/')) {
+  // Only descend when the target lives somewhere under this node.
+  if (targetPath.startsWith(tree.path + '/')) {
+    // No children loaded here yet — nothing to recurse into. Returning the node
+    // unchanged is correct; callers must materialize a parent before its child
+    // (refreshTree restores shallow-to-deep to guarantee this ordering).
+    if (!tree.children) {
+      return tree;
+    }
     return {
       ...tree,
       children: tree.children.map((child) =>
@@ -22,6 +36,34 @@ function updateTreeNode(
   }
 
   return tree;
+}
+
+// Sort directory paths shallow-to-deep so a parent is always restored before any
+// of its descendants. Depth is measured by path-separator count.
+function byDepthAscending(a: string, b: string): number {
+  const depthA = a.split('/').length;
+  const depthB = b.split('/').length;
+  if (depthA !== depthB) return depthA - depthB;
+  return a.localeCompare(b);
+}
+
+// Persisted expand-state lives in the top-level `expandedDirs` slot of the
+// viewer config (separate from per-workspace state). Debounced so rapid
+// expand/collapse bursts coalesce into a single write.
+let persistTimeout: ReturnType<typeof setTimeout> | null = null;
+function persistExpandedDirs(expandedDirs: Set<string>): void {
+  if (persistTimeout) clearTimeout(persistTimeout);
+  persistTimeout = setTimeout(async () => {
+    try {
+      const existing = (await window.electron.config.load()) || {};
+      await window.electron.config.save({
+        ...existing,
+        expandedDirs: Array.from(expandedDirs),
+      });
+    } catch (err) {
+      console.error('Failed to persist expanded dirs:', err);
+    }
+  }, 500);
 }
 
 interface SelectOptions {
@@ -41,6 +83,7 @@ interface FileSystemStore {
   loading: boolean;
   error: string | null;
   showHidden: boolean;        // Whether to show hidden files/folders
+  restoredFromConfig: boolean; // True once persisted expand-state has been restored (first load only)
 
   // Actions
   setTree: (tree: FileNode) => void;
@@ -76,6 +119,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
   loading: false,
   error: null,
   showHidden: false,
+  restoredFromConfig: false,
 
   setTree: (tree) => {
     // When setting a new tree, mark the root as loaded (since depth 1 is included)
@@ -168,6 +212,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
         newExpanded.add(path);
         soundEngine.playEvent('folder:expand');
       }
+      persistExpandedDirs(newExpanded);
       return { expandedDirs: newExpanded };
     });
 
@@ -184,6 +229,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
     set((state) => {
       const newExpanded = new Set(state.expandedDirs);
       newExpanded.add(path);
+      persistExpandedDirs(newExpanded);
       return { expandedDirs: newExpanded };
     });
 
@@ -198,6 +244,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
     set((state) => {
       const newExpanded = new Set(state.expandedDirs);
       newExpanded.delete(path);
+      persistExpandedDirs(newExpanded);
       return { expandedDirs: newExpanded };
     });
   },
@@ -243,7 +290,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
   },
 
   refreshTree: async () => {
-    const { setLoading, setError, setTree, expandedDirs, loadChildren, showHidden } = get();
+    const { setLoading, setError, setTree, loadChildren, showHidden, restoredFromConfig } = get();
     setLoading(true);
     setError(null);
 
@@ -251,14 +298,46 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
       const data = await window.electron.fs.getTree({ showHidden });
       setTree(data.tree);
 
-      // Re-load children for all expanded directories to restore state
-      // (setTree resets loadedDirs, so expanded folders lose their children)
-      const expandedPaths = Array.from(expandedDirs);
-      for (const path of expandedPaths) {
-        // Skip root (already loaded with tree)
-        if (path !== data.tree.path) {
-          loadChildren(path, { skipPrefetch: true });
+      // On the very first load after an app reload, the in-memory expand-state
+      // is empty. Restore the persisted set so folders the user had open before
+      // reload come back. Subsequent refreshes (file-watcher triggered) keep the
+      // live in-memory state instead.
+      let expandedDirs = get().expandedDirs;
+      if (!restoredFromConfig) {
+        try {
+          const cfg = await window.electron.config.load();
+          const persisted = cfg?.expandedDirs;
+          if (persisted && persisted.length > 0) {
+            // Always include the root, and only keep paths under the current root
+            // (config may carry stale paths from a previously-open folder).
+            const rootPath = data.tree.path;
+            const restored = new Set<string>([rootPath]);
+            for (const p of persisted) {
+              if (p === rootPath || p.startsWith(rootPath + '/')) {
+                restored.add(p);
+              }
+            }
+            expandedDirs = restored;
+            set({ expandedDirs: restored });
+          }
+        } catch {
+          // No persisted config — fall through with the live set.
         }
+        set({ restoredFromConfig: true });
+      }
+
+      // Re-load children for all expanded directories to restore state.
+      // setTree resets loadedDirs, so every expanded folder must re-fetch.
+      // CRITICAL: restore shallow-to-deep and AWAIT each level, so a parent's
+      // children array is materialized before we try to insert a grandchild into
+      // it. Firing these un-awaited / unordered was the root cause of deep
+      // folders failing to restore after reload.
+      const expandedPaths = Array.from(expandedDirs)
+        .filter((p) => p !== data.tree.path)
+        .sort(byDepthAscending);
+
+      for (const path of expandedPaths) {
+        await loadChildren(path, { skipPrefetch: true });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load file tree');
