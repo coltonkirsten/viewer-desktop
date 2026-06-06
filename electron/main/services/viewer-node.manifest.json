@@ -1,0 +1,45 @@
+{
+  "nodes": [
+    {
+      "id": "viewer_desktop",
+      "runtime": "local-process",
+      "category": "Actor",
+      "identity_secret": "env:VIEWER_MESH_SECRET",
+      "metadata": {
+        "description": "macOS / Electron viewer shell. Hosts the five shared viewer surfaces (open_view, close_view, focus_view, list_views, notify) inside the Electron main process and translates each into renderer control actions (window open/close/focus + osascript toast). The visionOS shell (viewer-spatial) exposes the identical surfaces so an agent drives either shell the same way. Spliced from viewer-core/mesh/viewer-surfaces.json."
+      },
+      "surfaces": [
+        {
+          "name": "open_view",
+          "type": "tool",
+          "invocation_mode": "request_response",
+          "schema": "./mesh/open_view.payload.json"
+        },
+        {
+          "name": "close_view",
+          "type": "tool",
+          "invocation_mode": "request_response",
+          "schema": "./mesh/close_view.payload.json"
+        },
+        {
+          "name": "focus_view",
+          "type": "tool",
+          "invocation_mode": "request_response",
+          "schema": "./mesh/focus_view.payload.json"
+        },
+        {
+          "name": "list_views",
+          "type": "tool",
+          "invocation_mode": "request_response",
+          "schema": "./mesh/list_views.payload.json"
+        },
+        {
+          "name": "notify",
+          "type": "inbox",
+          "invocation_mode": "fire_and_forget",
+          "schema": "./mesh/notify.payload.json"
+        }
+      ]
+    }
+  ]
+}

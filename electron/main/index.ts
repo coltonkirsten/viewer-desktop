@@ -11,11 +11,14 @@ import { registerClaudeHandlers, cleanupClaudeHandlers } from './ipc/claudeHandl
 import { registerWhisperHandlers, cleanupWhisperHandlers } from './ipc/whisperHandlers';
 import { FileWatcherService } from './services/fileWatcher';
 import { ControlServer } from './services/controlServer';
+import { createViewerNode, type ViewerNode } from './services/viewerNode';
+import { executeViewerControl } from './services/viewerControl';
 import { createApplicationMenu } from './menu';
 
 let mainWindow: BrowserWindow | null = null;
 let fileWatcher: FileWatcherService | null = null;
 let controlServer: ControlServer | null = null;
+let viewerNode: ViewerNode | null = null;
 
 // Root directory - starts as null (no workspace), set when user opens a folder
 let rootDir: string | null = null;
@@ -226,12 +229,28 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   createWindow();
 
-  // Start the control server for CLI/agent control
+  // Start the control server for CLI/agent control.
+  // TODO(wave4): the viewer_desktop mesh node below is the intended replacement
+  // for this :7434 HTTP control server; both run in parallel until integration
+  // is proven, after which Wave 4 decides the control server's retirement.
   controlServer = new ControlServer({
     getMainWindow: () => mainWindow,
     getRootDir: () => rootDir,
   });
   controlServer.start().catch(err => console.error('[ControlServer] Failed to start:', err));
+
+  // Start the Lattice mesh node alongside the control server. It exposes the
+  // shared viewer surfaces and dispatches through the SAME control seam.
+  const meshSecret = process.env.VIEWER_MESH_SECRET;
+  if (meshSecret) {
+    viewerNode = createViewerNode({
+      dispatch: (action, params) => executeViewerControl(mainWindow, action, params),
+      secret: meshSecret,
+    });
+    viewerNode.start().catch(err => console.error('[viewerNode] Failed to start:', err));
+  } else {
+    console.warn('[viewerNode] VIEWER_MESH_SECRET not set; mesh node disabled (control server :7434 still active)');
+  }
 
   // If we have an initial folder from CLI, notify renderer after window is ready
   if (initialFolder && mainWindow) {
@@ -264,6 +283,9 @@ app.on('before-quit', () => {
   }
   if (controlServer) {
     controlServer.stop();
+  }
+  if (viewerNode) {
+    void viewerNode.stop();
   }
   cleanupTerminalSessions();
   cleanupMcpHandlers();

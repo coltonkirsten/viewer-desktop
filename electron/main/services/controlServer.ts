@@ -6,6 +6,7 @@
 
 import http from 'http';
 import { BrowserWindow, ipcMain } from 'electron';
+import { executeViewerControl } from './viewerControl';
 
 interface ControlServerOptions {
   port?: number;
@@ -205,16 +206,9 @@ export class ControlServer {
     if (!this.bridgeReady) {
       throw new Error('Renderer bridge is not ready yet');
     }
-
-    const mainWindow = this.getMainWindow();
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      throw new Error('No main window available');
-    }
-
-    const result = await mainWindow.webContents.executeJavaScript(
-      `window.__viewerControl.execute(${JSON.stringify(action)}, ${JSON.stringify(params)})`
-    );
-    return result;
+    // Shares the single dispatch seam with the Lattice mesh node (viewerNode.ts)
+    // so control-action translation lives in exactly one place.
+    return executeViewerControl(this.getMainWindow(), action, params);
   }
 
   private parseBody(req: http.IncomingMessage): Promise<Record<string, unknown>> {

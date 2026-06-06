@@ -18,6 +18,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "check": "npm run typecheck && npm run lint",
+    "test": "node --test electron/main/services/viewerNode.test.ts",
     "postinstall": "electron-rebuild",
     "prepare": "git config core.hooksPath scripts/githooks || true",
     "install-cli": "chmod +x bin/viewer bin/viewer-ctl bin/install-cli.sh && bin/install-cli.sh"
