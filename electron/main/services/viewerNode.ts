@@ -21,7 +21,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { MeshDeny, MeshNode, type Envelope } from './mesh-sdk/index.ts'
 import type { ControlDispatch } from './viewerControl.ts'
-import type { View, ViewType } from '@viewer/core'
+import { getGenerator, runGenerator, type View, type ViewType } from '@viewer/core'
 
 const execFileP = promisify(execFile)
 
@@ -91,6 +91,7 @@ export interface ViewerNodeDeps {
 export interface ViewerNode {
   readonly handlers: {
     open_view: (env: Envelope) => Promise<Record<string, unknown>>
+    run_generator: (env: Envelope) => Promise<Record<string, unknown>>
     close_view: (env: Envelope) => Promise<Record<string, unknown>>
     focus_view: (env: Envelope) => Promise<Record<string, unknown>>
     list_views: (env: Envelope) => Promise<Record<string, unknown>>
@@ -146,6 +147,33 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
     }
     tracked.set(view.id, { windowId: result.windowId, view: view as View })
     return { ok: true, id: view.id }
+  }
+
+  // The declarative-authoring symmetry of spatial's `POST /generators/{slug}/run`:
+  // resolve `slug` in the shared @viewer/core registry, run it to a View[] (which
+  // `runGenerator` validates), then open every emitted View through the SAME
+  // openView seam. Same generator code, same View contract, driven over the mesh.
+  async function runGeneratorHandler(env: Envelope): Promise<Record<string, unknown>> {
+    const payload = env.payload as { slug?: string; params?: unknown }
+    if (typeof payload.slug !== 'string' || payload.slug.length === 0) {
+      throw new MeshDeny('viewer_bad_payload', { have: { slug: typeof payload.slug } })
+    }
+    const entry = getGenerator(payload.slug)
+    if (!entry) throw new MeshDeny('viewer_unknown_generator', { slug: payload.slug })
+    let views: View[]
+    try {
+      views = runGenerator(entry, payload.params ?? {})
+    } catch (e) {
+      throw new MeshDeny('viewer_generator_failed', { slug: payload.slug, detail: (e as Error).message })
+    }
+    const opened: string[] = []
+    for (const view of views) {
+      // openView reads env.payload as a View; reuse the envelope (from/
+      // correlation_id) so a generator-opened view stays auditable.
+      await openView({ ...env, payload: view as unknown as Record<string, unknown> })
+      opened.push(view.id)
+    }
+    return { ok: true, slug: payload.slug, opened, count: opened.length }
   }
 
   async function closeView(env: Envelope): Promise<Record<string, unknown>> {
@@ -211,6 +239,7 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
     }
     const n = new MeshNode(VIEWER_NODE_ID, deps.secret, deps.coreUrl ?? CORE_URL)
     n.on('open_view', openView)
+    n.on('run_generator', runGeneratorHandler)
     n.on('close_view', closeView)
     n.on('focus_view', focusView)
     n.on('list_views', listViews)
@@ -230,6 +259,7 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
   return {
     handlers: {
       open_view: openView,
+      run_generator: runGeneratorHandler,
       close_view: closeView,
       focus_view: focusView,
       list_views: listViews,

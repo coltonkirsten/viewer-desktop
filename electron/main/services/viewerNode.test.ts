@@ -11,6 +11,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { createViewerNode } from './viewerNode.ts'
 import { MeshDeny, type Envelope } from './mesh-sdk/index.ts'
+import { registerGenerator, _resetGenerators, type View } from '@viewer/core'
 
 interface DispatchCall {
   action: string
@@ -211,4 +212,63 @@ test('notify ignores an empty message', async () => {
   })
   await node.handlers.notify(makeEnv({ text: '' }))
   assert.equal(called, false)
+})
+
+// --- run_generator: the mesh-driven symmetry of spatial's /generators/{slug}/run ---
+
+test('run_generator runs a registered generator and opens every emitted View', async () => {
+  _resetGenerators()
+  registerGenerator({
+    slug: 'demo_two',
+    describe: 'emits two views (a markdown + a text) for the test',
+    generate: (): View[] => [
+      { id: 'a', type: 'markdown', source: { kind: 'inline', value: '# A' } },
+      { id: 'b', type: 'text', source: { kind: 'inline', value: 'B' } },
+    ],
+  })
+  const { fn, calls } = mockDispatch({ 'open-file': { windowId: 'win', appId: 'x' } })
+  const node = createViewerNode({ dispatch: fn })
+
+  const res = await node.handlers.run_generator(makeEnv({ slug: 'demo_two' }))
+
+  assert.deepEqual(res, { ok: true, slug: 'demo_two', opened: ['a', 'b'], count: 2 })
+  // one open-file dispatch per emitted View
+  assert.equal(calls.filter((c) => c.action === 'open-file').length, 2)
+  _resetGenerators()
+})
+
+test('run_generator rejects an unknown slug with MeshDeny', async () => {
+  _resetGenerators()
+  const { fn } = mockDispatch({})
+  const node = createViewerNode({ dispatch: fn })
+  await assert.rejects(
+    () => node.handlers.run_generator(makeEnv({ slug: 'nope' })),
+    (e: unknown) => e instanceof MeshDeny && e.reason === 'viewer_unknown_generator',
+  )
+})
+
+test('run_generator rejects a missing slug with MeshDeny', async () => {
+  const { fn } = mockDispatch({})
+  const node = createViewerNode({ dispatch: fn })
+  await assert.rejects(
+    () => node.handlers.run_generator(makeEnv({})),
+    (e: unknown) => e instanceof MeshDeny && e.reason === 'viewer_bad_payload',
+  )
+})
+
+test('run_generator surfaces a generator that emits an invalid View as MeshDeny', async () => {
+  _resetGenerators()
+  registerGenerator({
+    slug: 'bad_gen',
+    describe: 'emits an invalid view to exercise the error path',
+    // emits a View missing required fields -> runGenerator's assertView throws
+    generate: (): View[] => [{ id: 'x' } as unknown as View],
+  })
+  const { fn } = mockDispatch({ 'open-file': { windowId: 'win', appId: 'x' } })
+  const node = createViewerNode({ dispatch: fn })
+  await assert.rejects(
+    () => node.handlers.run_generator(makeEnv({ slug: 'bad_gen' })),
+    (e: unknown) => e instanceof MeshDeny && e.reason === 'viewer_generator_failed',
+  )
+  _resetGenerators()
 })

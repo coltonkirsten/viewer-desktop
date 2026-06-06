@@ -6,7 +6,7 @@
       "category": "Actor",
       "identity_secret": "env:VIEWER_MESH_SECRET",
       "metadata": {
-        "description": "macOS / Electron viewer shell. Hosts the five shared viewer surfaces (open_view, close_view, focus_view, list_views, notify) inside the Electron main process and translates each into renderer control actions (window open/close/focus + osascript toast). The visionOS shell (viewer-spatial) exposes the identical surfaces so an agent drives either shell the same way. Spliced from viewer-core/mesh/viewer-surfaces.json."
+        "description": "macOS / Electron viewer shell. Hosts the shared viewer surfaces (open_view, run_generator, close_view, focus_view, list_views, notify) inside the Electron main process and translates each into renderer control actions (window open/close/focus + osascript toast). run_generator resolves a slug in the shared @viewer/core generator registry, runs it to a View[], and opens each emitted View — the mesh-driven symmetry of spatial's POST /generators/{slug}/run. The visionOS shell (viewer-spatial) exposes the identical surfaces so an agent drives either shell the same way. Spliced from viewer-core/mesh/viewer-surfaces.json."
       },
       "surfaces": [
         {
@@ -14,6 +14,12 @@
           "type": "tool",
           "invocation_mode": "request_response",
           "schema": "./mesh/open_view.payload.json"
+        },
+        {
+          "name": "run_generator",
+          "type": "tool",
+          "invocation_mode": "request_response",
+          "schema": "./mesh/run_generator.payload.json"
         },
         {
           "name": "close_view",
