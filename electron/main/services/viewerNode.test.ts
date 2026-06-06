@@ -310,6 +310,47 @@ test('run_generator surfaces a generator that emits an invalid View as MeshDeny'
   _resetGenerators()
 })
 
+// --- list_generators: the discovery half of run_generator. Reflects the shared
+//     @viewer/core registry (slug + describe + paramsSchema), never the generate fn. ---
+
+test('list_generators returns the registered generators with no generate fn leaked', async () => {
+  _resetGenerators()
+  registerGenerator({
+    slug: 'demo_listed',
+    describe: 'a generator the agent can discover before running it',
+    paramsSchema: { type: 'object', properties: { name: { type: 'string' } } },
+    generate: (): View[] => [{ id: 'd', type: 'text', source: { kind: 'inline', value: 'D' } }],
+  })
+  const { fn } = mockDispatch({})
+  const node = createViewerNode({ dispatch: fn })
+
+  const res = (await node.handlers.list_generators(makeEnv({}))) as {
+    ok: boolean
+    generators: Array<Record<string, unknown>>
+  }
+
+  assert.equal(res.ok, true)
+  assert.equal(res.generators.length, 1)
+  const [entry] = res.generators
+  assert.equal(entry.slug, 'demo_listed')
+  assert.equal(entry.describe, 'a generator the agent can discover before running it')
+  assert.deepEqual(entry.paramsSchema, { type: 'object', properties: { name: { type: 'string' } } })
+  // The callable must NEVER cross the surface — only its addressable metadata.
+  assert.equal('generate' in entry, false)
+  _resetGenerators()
+})
+
+test('list_generators returns an empty list when no generators are registered', async () => {
+  _resetGenerators()
+  const { fn } = mockDispatch({})
+  const node = createViewerNode({ dispatch: fn })
+  const res = (await node.handlers.list_generators(makeEnv({}))) as {
+    ok: boolean
+    generators: unknown[]
+  }
+  assert.deepEqual(res, { ok: true, generators: [] })
+})
+
 // --- view_event: the human→agent SEND path. The viewer node is the SENDER; the
 //     event flows on the existing mesh via the openedBy (env.from) captured at open. ---
 
