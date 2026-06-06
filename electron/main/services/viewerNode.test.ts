@@ -98,6 +98,27 @@ test('open_view rejects a url source (follow-up wave) with MeshDeny', async () =
   )
 })
 
+test('open_view rejects a reused id with MeshDeny (no orphaned window)', async () => {
+  const { fn, calls } = mockDispatch({ 'open-file': { windowId: 'win-dup', appId: 'markdown-viewer' } })
+  const node = createViewerNode({ dispatch: fn })
+
+  // First open of 'dup' succeeds and tracks the window.
+  await node.handlers.open_view(
+    makeEnv({ id: 'dup', type: 'markdown', source: { kind: 'path', value: '/a.md' } }),
+  )
+  // Re-using the same id must be denied — not silently overwrite (which would
+  // orphan win-dup, leaving it open but un-closable).
+  await assert.rejects(
+    () =>
+      node.handlers.open_view(
+        makeEnv({ id: 'dup', type: 'markdown', source: { kind: 'path', value: '/b.md' } }),
+      ),
+    (e: unknown) => e instanceof MeshDeny && (e as MeshDeny).reason === 'viewer_id_in_use',
+  )
+  // The reuse was rejected before dispatch — only the first open hit open-file.
+  assert.equal(calls.length, 1)
+})
+
 test('close_view closes the tracked window and clears it', async () => {
   const { fn, calls } = mockDispatch({
     'open-file': { windowId: 'win-9' },

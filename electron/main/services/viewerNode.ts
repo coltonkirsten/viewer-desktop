@@ -133,6 +133,13 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
         have: { id: typeof view.id, type: typeof view.type, source: typeof view.source },
       })
     }
+    // Reject id reuse up front. Silently overwriting tracked[id] would orphan
+    // the previous window — it stays open but drops out of the map, so it can
+    // never be closed/focused again. Make the agent close_view first (or pick a
+    // fresh id); a stateless agent after a context reset should call list_views.
+    if (tracked.has(view.id)) {
+      throw new MeshDeny('viewer_id_in_use', { id: view.id })
+    }
     const mapping = TYPE_TO_APP[view.type as ViewType]
     if (!mapping) {
       throw new MeshDeny('viewer_unknown_view_type', { type: view.type })
