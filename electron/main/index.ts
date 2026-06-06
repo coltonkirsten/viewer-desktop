@@ -13,6 +13,7 @@ import { FileWatcherService } from './services/fileWatcher';
 import { ControlServer } from './services/controlServer';
 import { createViewerNode, type ViewerNode } from './services/viewerNode';
 import { executeViewerControl } from './services/viewerControl';
+import { registerAllGenerators } from '@viewer/core';
 import { createApplicationMenu } from './menu';
 
 let mainWindow: BrowserWindow | null = null;
@@ -247,6 +248,11 @@ app.whenReady().then(() => {
   // shared viewer surfaces and dispatches through the SAME control seam.
   const meshSecret = process.env.VIEWER_MESH_SECRET;
   if (meshSecret) {
+    // Populate the shared @viewer/core generator registry so the node's
+    // run_generator / list_generators surfaces resolve the slate slugs. Done
+    // once at app startup (not in the node constructor, which would re-register
+    // on every test-built node and clobber controlled-registry tests).
+    registerAllGenerators();
     viewerNode = createViewerNode({
       dispatch: (action, params) => executeViewerControl(mainWindow, action, params),
       secret: meshSecret,
