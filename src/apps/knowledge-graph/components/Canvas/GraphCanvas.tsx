@@ -25,6 +25,8 @@ const edgeTypes = { floating: FloatingEdge };
 interface GraphCanvasProps {
   onNodeContextMenu?: (event: React.MouseEvent, node: Node) => void;
   onCanvasContextMenu?: (event: React.MouseEvent) => void;
+  /** Host window id, used to report node-drag interactions back to the opening agent. */
+  windowId?: string;
 }
 
 // Pending edge awaiting label input
@@ -36,7 +38,7 @@ interface PendingEdge {
   targetPos: { x: number; y: number };
 }
 
-export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCanvasProps) {
+export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu, windowId }: GraphCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [pendingEdge, setPendingEdge] = useState<PendingEdge | null>(null);
 
@@ -108,6 +110,20 @@ export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCan
       // Selection changes are handled by onSelectionChange callback
     });
   }, [storeUpdateNode, storeDeleteNode]);
+
+  // Human→agent feedback: when the user finishes dragging a node, report the
+  // final position back to the agent that opened this view. Mirrors the kanban
+  // card_moved pattern. Fire-and-forget — a failed emit must never disrupt the
+  // local graph; emit only on drag *stop* (not per-frame position change).
+  const handleNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
+    if (!windowId) return;
+    void window.electron?.control
+      ?.emitViewEvent(windowId, 'node_moved', {
+        nodeId: node.id,
+        position: node.position,
+      })
+      .catch(() => {});
+  }, [windowId]);
 
   // Handle selection changes from React Flow
   const handleSelectionChange = useCallback(({ nodes }: { nodes: Node[] }) => {
@@ -228,6 +244,7 @@ export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCan
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={handleNodesChange}
+        onNodeDragStop={handleNodeDragStop}
         onEdgesChange={handleEdgesChange}
         onSelectionChange={handleSelectionChange}
         onPaneClick={handlePaneClick}

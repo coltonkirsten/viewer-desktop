@@ -14,7 +14,7 @@ import { MainToolbar } from './components/Toolbar/MainToolbar';
 import { DetailsSidebar } from './components/Sidebar/DetailsSidebar';
 import { SearchPanel } from './components/Search/SearchPanel';
 
-export function KnowledgeGraph({ filePath, isActive }: AppProps) {
+export function KnowledgeGraph({ windowId, filePath, isActive }: AppProps) {
   const { fileApi, setDirty, updateTab } = useAppContext();
   const { subscribeToFile } = useFileWatcher();
 
@@ -267,7 +267,7 @@ export function KnowledgeGraph({ filePath, isActive }: AppProps) {
         <div className="flex-1 flex overflow-hidden relative">
           {/* Canvas */}
           <div className="flex-1 relative">
-            <GraphCanvas />
+            <GraphCanvas windowId={windowId} />
 
             {/* Search panel */}
             {showSearch && (
