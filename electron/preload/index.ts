@@ -539,6 +539,16 @@ const electronAPI = {
   control: {
     bridgeReady: (): Promise<void> =>
       ipcRenderer.invoke('control:bridge-ready'),
+
+    // Human→agent feedback: the renderer reports an interaction on a hosted view
+    // (it knows its own windowId, not the agent-assigned View.id) and the main
+    // process emits it as a view_event back to the opening agent. Fire-and-forget.
+    emitViewEvent: (
+      windowId: string,
+      action: string,
+      data: Record<string, unknown>
+    ): Promise<void> =>
+      ipcRenderer.invoke('control:emit-view-event', windowId, action, data),
   },
 
   // Whisper dictation operations

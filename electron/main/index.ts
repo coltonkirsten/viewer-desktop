@@ -248,6 +248,16 @@ app.whenReady().then(() => {
       secret: meshSecret,
     });
     viewerNode.start().catch(err => console.error('[viewerNode] Failed to start:', err));
+
+    // SEND half of view_event: the renderer reports an interaction on a hosted
+    // view (keyed by its windowId); resolve it to the opening agent and emit.
+    // Fire-and-forget — a gesture must never surface an error back to the human.
+    ipcMain.handle(
+      'control:emit-view-event',
+      (_e, windowId: string, action: string, data: Record<string, unknown>) => {
+        viewerNode?.emitViewEventForWindow(windowId, action, data ?? {}).catch(() => {});
+      }
+    );
   } else {
     console.warn('[viewerNode] VIEWER_MESH_SECRET not set; mesh node disabled (control server :7434 still active)');
   }

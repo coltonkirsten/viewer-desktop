@@ -862,7 +862,7 @@ function DraggableColumn(props: DraggableColumnProps) {
   );
 }
 
-export function KanbanBoard({ filePath, isActive }: AppProps) {
+export function KanbanBoard({ windowId, filePath, isActive }: AppProps) {
   const { fileApi, setDirty, openFile, closeTab } = useAppContext();
   const { subscribeToFile } = useFileWatcher();
 
@@ -1369,6 +1369,18 @@ export function KanbanBoard({ filePath, isActive }: AppProps) {
       });
 
       markDirty({ ...board, columns: newColumns });
+
+      // Human→agent feedback: report the cross-column drag back to the agent that
+      // opened this view (resolved in main from windowId). Fire-and-forget — a
+      // failed emit must never disrupt the local board update.
+      void window.electron?.control
+        ?.emitViewEvent(windowId, 'card_moved', {
+          cardId: activeCardId,
+          fromColumn: sourceColumnId,
+          toColumn: targetColumnId,
+          position: targetIndex,
+        })
+        .catch(() => {});
     }
   };
 

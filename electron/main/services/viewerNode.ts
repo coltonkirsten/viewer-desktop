@@ -50,7 +50,21 @@ const TYPE_TO_APP: Record<ViewType, { appId: string; ext: string }> = {
 interface TrackedView {
   windowId: string
   view: View
+  /** The agent that opened this view (env.from at open_view time). The target a
+   *  view_event is emitted back to when the human interacts with the view. */
+  openedBy: string
 }
+
+/** The action enum the view_event surface accepts (v1 — see
+ *  viewer-core/mesh/view_event.payload.json). Permissive: an unknown action is
+ *  still emitted, the agent decides what to do with it. */
+export type ViewEventAction =
+  | 'card_moved'
+  | 'card_edited'
+  | 'node_moved'
+  | 'checkbox_toggled'
+  | 'cell_edited'
+  | (string & {})
 
 interface GetStateResult {
   workspaces?: Array<{
@@ -86,6 +100,13 @@ export interface ViewerNodeDeps {
   coreUrl?: string
   /** Surfaces a transient message to the user. Defaults to an osascript toast. */
   notifier?: (level: string, text: string) => Promise<void>
+  /**
+   * Emits a fire-and-forget invocation back to a target agent — the SEND half of
+   * view_event. Injected (mirroring `dispatch`/`notifier`) so emitViewEvent stays
+   * unit-testable with a mock. The default uses the live MeshNode created in
+   * `start()`: `node.invoke(target, payload, { wait: false })`.
+   */
+  meshEmit?: (target: string, payload: Record<string, unknown>) => Promise<void>
 }
 
 export interface ViewerNode {
@@ -97,6 +118,15 @@ export interface ViewerNode {
     list_views: (env: Envelope) => Promise<Record<string, unknown>>
     notify: (env: Envelope) => Promise<void>
   }
+  /**
+   * The SEND half of view_event: the human touched view `viewId`, so emit a
+   * fire-and-forget invocation to the agent that opened it. Untracked viewId or a
+   * view with no opener drops silently (never throws — a gesture must not crash).
+   */
+  emitViewEvent: (viewId: string, action: ViewEventAction, data?: Record<string, unknown>) => Promise<void>
+  /** windowId-keyed convenience over {@link emitViewEvent}: the renderer knows its
+   *  windowId (AppProps), not the agent-assigned View.id, so the shell resolves it. */
+  emitViewEventForWindow: (windowId: string, action: ViewEventAction, data?: Record<string, unknown>) => Promise<void>
   start: () => Promise<MeshNode>
   stop: () => Promise<void>
 }
@@ -106,6 +136,15 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
   const notify = deps.notifier ?? defaultNotifier
   const tracked = new Map<string, TrackedView>()
   let node: MeshNode | null = null
+
+  // Default SEND path: a 202 fire_and_forget back to the opening agent. No-op
+  // until the node is started (a gesture before the mesh is live just drops).
+  const meshEmit =
+    deps.meshEmit ??
+    (async (target: string, payload: Record<string, unknown>): Promise<void> => {
+      if (!node) return
+      await node.invoke(target, payload, { wait: false })
+    })
 
   /** Resolve a View's source into a filesystem path the ContentHost can read. */
   async function resolveSourceToPath(view: View, ext: string): Promise<string> {
@@ -152,7 +191,10 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
     if (!result || typeof result.windowId !== 'string') {
       throw new MeshDeny('viewer_open_failed', { id: view.id, detail: result?.error ?? 'no windowId' })
     }
-    tracked.set(view.id, { windowId: result.windowId, view: view as View })
+    // Capture the opener (env.from) so a later human interaction can be routed
+    // back to the agent that painted this view. run_generator-opened views reuse
+    // the envelope, so openedBy flows through to them unchanged.
+    tracked.set(view.id, { windowId: result.windowId, view: view as View, openedBy: env.from })
     return { ok: true, id: view.id }
   }
 
@@ -240,6 +282,48 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
     }
   }
 
+  // view_event is NOT a surface on this node — the viewer node is the SENDER. The
+  // event flows on the existing mesh via the captured `openedBy`, emitted as a
+  // fresh fire_and_forget invocation to { to: openedBy, surface: 'view_event' }.
+  async function emitViewEvent(
+    viewId: string,
+    action: ViewEventAction,
+    data: Record<string, unknown> = {},
+  ): Promise<void> {
+    const entry = tracked.get(viewId)
+    // Untracked view or no recorded opener: drop silently. A stray gesture (e.g.
+    // a window closed out-of-band, or a view opened before openedBy existed) must
+    // never crash the interaction path.
+    if (!entry || !entry.openedBy) return
+    const payload = {
+      viewId,
+      type: entry.view.type,
+      action,
+      data,
+      ts: new Date().toISOString(),
+    }
+    try {
+      await meshEmit(entry.openedBy, payload)
+    } catch {
+      // Fire-and-forget: the human's gesture already happened locally; a failed
+      // emit must not surface back as an error.
+    }
+  }
+
+  async function emitViewEventForWindow(
+    windowId: string,
+    action: ViewEventAction,
+    data: Record<string, unknown> = {},
+  ): Promise<void> {
+    for (const [id, entry] of tracked) {
+      if (entry.windowId === windowId) {
+        await emitViewEvent(id, action, data)
+        return
+      }
+    }
+    // No tracked view for this window: drop silently (same contract as above).
+  }
+
   async function start(): Promise<MeshNode> {
     if (!deps.secret) {
       throw new Error(`[${VIEWER_NODE_ID}] secret is required to start (set VIEWER_MESH_SECRET)`)
@@ -272,6 +356,8 @@ export function createViewerNode(deps: ViewerNodeDeps): ViewerNode {
       list_views: listViews,
       notify: notifyHandler,
     },
+    emitViewEvent,
+    emitViewEventForWindow,
     start,
     stop,
   }

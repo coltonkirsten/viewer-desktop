@@ -30,17 +30,33 @@ function mockDispatch(responses: Record<string, unknown>): {
   return { fn, calls }
 }
 
-function makeEnv(payload: Record<string, unknown>): Envelope {
+function makeEnv(payload: Record<string, unknown>, from = 'agent'): Envelope {
   return {
     id: 'env-1',
     correlation_id: 'env-1',
-    from: 'agent',
+    from,
     to: 'viewer_desktop.surface',
     kind: 'invocation',
     payload,
     timestamp: new Date().toISOString(),
     signature: 'test',
   }
+}
+
+interface EmitCall {
+  target: string
+  payload: Record<string, unknown>
+}
+
+function mockMeshEmit(): {
+  fn: (target: string, payload: Record<string, unknown>) => Promise<void>
+  calls: EmitCall[]
+} {
+  const calls: EmitCall[] = []
+  const fn = async (target: string, payload: Record<string, unknown>): Promise<void> => {
+    calls.push({ target, payload })
+  }
+  return { fn, calls }
 }
 
 test('open_view (path source) dispatches open-file with the mapped app and tracks the id', async () => {
@@ -292,4 +308,97 @@ test('run_generator surfaces a generator that emits an invalid View as MeshDeny'
     (e: unknown) => e instanceof MeshDeny && e.reason === 'viewer_generator_failed',
   )
   _resetGenerators()
+})
+
+// --- view_event: the human→agent SEND path. The viewer node is the SENDER; the
+//     event flows on the existing mesh via the openedBy (env.from) captured at open. ---
+
+test('open_view captures openedBy (env.from), so emitViewEvent routes back to that agent', async () => {
+  const { fn } = mockDispatch({ 'open-file': { windowId: 'win-e1', appId: 'kanban-board' } })
+  const emit = mockMeshEmit()
+  const node = createViewerNode({ dispatch: fn, meshEmit: emit.fn })
+
+  // The opener is whoever sent the open_view envelope (env.from).
+  await node.handlers.open_view(
+    makeEnv({ id: 'board', type: 'kanban', source: { kind: 'path', value: '/b.kanban' } }, 'agent_sprint'),
+  )
+  await node.emitViewEvent('board', 'card_moved', { cardId: 'c1' })
+
+  assert.equal(emit.calls.length, 1)
+  assert.equal(emit.calls[0].target, 'agent_sprint')
+  assert.equal(emit.calls[0].payload.viewId, 'board')
+})
+
+test('emitViewEvent emits a fire-and-forget view_event with the canonical payload shape', async () => {
+  const { fn } = mockDispatch({ 'open-file': { windowId: 'win-e2', appId: 'kanban-board' } })
+  const emit = mockMeshEmit()
+  const node = createViewerNode({ dispatch: fn, meshEmit: emit.fn })
+
+  await node.handlers.open_view(
+    makeEnv({ id: 'kb', type: 'kanban', source: { kind: 'path', value: '/k.kanban' } }, 'agent_x'),
+  )
+  await node.emitViewEvent('kb', 'card_moved', {
+    cardId: 'c42',
+    fromColumn: 'todo',
+    toColumn: 'done',
+    position: 0,
+  })
+
+  assert.equal(emit.calls.length, 1)
+  const { target, payload } = emit.calls[0]
+  assert.equal(target, 'agent_x')
+  assert.equal(payload.viewId, 'kb')
+  assert.equal(payload.type, 'kanban')
+  assert.equal(payload.action, 'card_moved')
+  assert.deepEqual(payload.data, { cardId: 'c42', fromColumn: 'todo', toColumn: 'done', position: 0 })
+  assert.equal(typeof payload.ts, 'string')
+  assert.match(payload.ts as string, /^\d{4}-\d{2}-\d{2}T/)
+})
+
+test('emitViewEvent on an untracked viewId drops silently (no throw, no emit)', async () => {
+  const { fn } = mockDispatch({})
+  const emit = mockMeshEmit()
+  const node = createViewerNode({ dispatch: fn, meshEmit: emit.fn })
+
+  // Must not throw — a stray gesture (window closed out-of-band, unknown id) is
+  // not an error condition.
+  await node.emitViewEvent('ghost', 'card_moved', { cardId: 'x' })
+  assert.equal(emit.calls.length, 0)
+})
+
+test('a kanban card_moved gesture (window-keyed) produces a view_event invocation', async () => {
+  const { fn } = mockDispatch({ 'open-file': { windowId: 'win-kanban', appId: 'kanban-board' } })
+  const emit = mockMeshEmit()
+  const node = createViewerNode({ dispatch: fn, meshEmit: emit.fn })
+
+  await node.handlers.open_view(
+    makeEnv({ id: 'sprint', type: 'kanban', source: { kind: 'path', value: '/sprint.kanban' } }, 'agent_pm'),
+  )
+  // The renderer knows its windowId (AppProps), not the agent-assigned View.id —
+  // this is the path the kanban drag handler drives via IPC.
+  await node.emitViewEventForWindow('win-kanban', 'card_moved', {
+    cardId: 'TASK-7',
+    fromColumn: 'In Progress',
+    toColumn: 'Done',
+    position: 2,
+  })
+
+  assert.equal(emit.calls.length, 1)
+  assert.equal(emit.calls[0].target, 'agent_pm')
+  assert.equal(emit.calls[0].payload.viewId, 'sprint')
+  assert.equal(emit.calls[0].payload.action, 'card_moved')
+  assert.deepEqual(emit.calls[0].payload.data, {
+    cardId: 'TASK-7',
+    fromColumn: 'In Progress',
+    toColumn: 'Done',
+    position: 2,
+  })
+})
+
+test('emitViewEventForWindow on an unknown windowId drops silently', async () => {
+  const { fn } = mockDispatch({})
+  const emit = mockMeshEmit()
+  const node = createViewerNode({ dispatch: fn, meshEmit: emit.fn })
+  await node.emitViewEventForWindow('no-such-window', 'card_moved', {})
+  assert.equal(emit.calls.length, 0)
 })
