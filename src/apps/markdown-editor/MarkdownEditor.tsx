@@ -286,7 +286,7 @@ export function MarkdownEditor({ filePath, isActive }: AppProps) {
     if (!node) return '';
     if (Array.isArray(node)) return node.map(extractTextContent).join('');
     if (typeof node === 'object' && 'props' in node) {
-      return extractTextContent((node as React.ReactElement).props.children);
+      return extractTextContent((node as React.ReactElement<{ children?: React.ReactNode }>).props.children);
     }
     return '';
   }, []);

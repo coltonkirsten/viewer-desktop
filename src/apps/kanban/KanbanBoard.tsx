@@ -23,10 +23,8 @@ import {
   AlertTriangle,
   Archive,
   ArchiveRestore,
-  ArrowRight,
   Calendar,
   CheckSquare,
-  Copy,
   Filter,
   LayoutDashboard,
   Loader2,
@@ -41,7 +39,7 @@ import { useAppContext } from '../AppContext';
 import { useFileWatcher } from '../../hooks/useFileWatcher';
 import type { AppProps } from '../types';
 import { debouncedAutoSave, flushPendingSave } from './utils/autosave';
-import { getTagColor, getAllUniqueTags } from './utils/tagColors';
+import { getTagColor } from './utils/tagColors';
 import { RichTextEditor, getChecklistProgress } from './components/RichTextEditor';
 import { useKanbanKeyboard } from './hooks/useKanbanKeyboard';
 
@@ -864,22 +862,6 @@ function DraggableColumn(props: DraggableColumnProps) {
   );
 }
 
-// Column preview for drag overlay
-function ColumnPreview({ column }: { column: KanbanColumn }) {
-  return (
-    <div className="w-[280px] p-3 rounded-lg border-2 border-[var(--holo-accent)] bg-[rgba(15,15,25,0.95)] shadow-xl backdrop-blur-sm">
-      <div className="flex items-center gap-2">
-        <div
-          className="w-2 h-6 rounded-full"
-          style={{ background: column.color || 'var(--holo-accent)' }}
-        />
-        <span className="text-sm font-semibold">{column.title}</span>
-        <span className="text-xs text-[var(--holo-muted)]">{column.cards.length} cards</span>
-      </div>
-    </div>
-  );
-}
-
 export function KanbanBoard({ filePath, isActive }: AppProps) {
   const { fileApi, setDirty, openFile, closeTab } = useAppContext();
   const { subscribeToFile } = useFileWatcher();
@@ -925,10 +907,6 @@ export function KanbanBoard({ filePath, isActive }: AppProps) {
     currentY: number;
   } | null>(null);
 
-  // Multi-select state
-  const [selectedCardIds, setSelectedCardIds] = useState<Set<string>>(new Set());
-  const [lastClickedCardId, setLastClickedCardId] = useState<string | null>(null);
-
   // Keyboard shortcuts
   const { selectedCard, setSelectedCard, showHelp, setShowHelp } = useKanbanKeyboard({
     isActive,
@@ -954,7 +932,7 @@ export function KanbanBoard({ filePath, isActive }: AppProps) {
   });
 
   useEffect(() => {
-    window.electron.app.getRootDir().then(setRootDir);
+    window.electron.app.getRootDir().then((dir) => setRootDir(dir ?? ''));
   }, []);
 
   // Filter columns based on search query and active tag filters
@@ -983,18 +961,6 @@ export function KanbanBoard({ filePath, isActive }: AppProps) {
       }),
     }));
   }, [board, searchQuery, activeTagFilters]);
-
-  // Helper to get flat list of all cards with positions (for range selection)
-  const getAllCardsFlat = useCallback(() => {
-    if (!board) return [];
-    const cards: Array<{ card: KanbanCard; columnId: string; index: number }> = [];
-    board.columns.forEach(col => {
-      col.cards.forEach((card, index) => {
-        cards.push({ card, columnId: col.id, index });
-      });
-    });
-    return cards;
-  }, [board]);
 
   const loadBoard = useCallback(
     async (path: string, isReload = false) => {
@@ -1234,7 +1200,8 @@ export function KanbanBoard({ filePath, isActive }: AppProps) {
     const card = board.archivedCards?.find(c => c.id === cardId);
     if (!card) return;
 
-    // Remove archived metadata
+    // Remove archived metadata (intentional destructure-to-omit)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { isArchived, archivedAt, archivedFromColumn, ...restoredCard } = card;
 
     const next: KanbanBoardData = {
@@ -1418,7 +1385,7 @@ export function KanbanBoard({ filePath, isActive }: AppProps) {
     try {
       // Use template columns if selected, otherwise use default
       const templateColumns = selectedTemplate
-        ? selectedTemplate.columns.map((col, idx) => ({
+        ? selectedTemplate.columns.map((col) => ({
             id: `col-${crypto.randomUUID()}`,
             title: col.title,
             color: col.color,

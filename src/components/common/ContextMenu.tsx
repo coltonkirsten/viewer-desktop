@@ -44,6 +44,8 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
       adjustedY = Math.max(8, adjustedY);
 
       if (adjustedX !== x || adjustedY !== y) {
+        // Must measure the rendered menu (getBoundingClientRect) before repositioning it.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPosition({ x: adjustedX, y: adjustedY });
       }
     }

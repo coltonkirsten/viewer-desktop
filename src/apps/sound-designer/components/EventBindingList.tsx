@@ -10,8 +10,9 @@ export function EventBindingList({ onSave }: EventBindingListProps) {
   const [bindings, setBindings] = useState(soundEngine.getAllBindings());
   const allSounds = soundEngine.getAllSounds();
 
-  // Refresh bindings when component mounts
+  // Refresh bindings from the sound engine when the component mounts.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBindings(soundEngine.getAllBindings());
   }, []);
 

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import type { McpServerInfo, ClaudeSettings } from '../types';
+import type { McpServerInfo } from '../types';
 
 interface UseMcpServersResult {
   servers: McpServerInfo[];

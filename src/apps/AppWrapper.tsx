@@ -94,30 +94,6 @@ function AppLoading() {
   );
 }
 
-/**
- * Error fallback shown when app fails to load (import error)
- */
-function AppLoadError({ appId, onRetry }: { appId: string; onRetry: () => void }) {
-  return (
-    <div className="h-full flex flex-col items-center justify-center gap-4 p-6 bg-[rgba(15,15,25,0.9)]">
-      <div className="flex items-center gap-2 text-amber-400">
-        <AlertTriangle className="w-6 h-6" />
-        <span className="text-lg font-medium">Failed to Load</span>
-      </div>
-      <p className="text-sm text-[var(--holo-muted)] text-center">
-        Could not load the "{appId}" app. It may have a syntax error.
-      </p>
-      <button
-        onClick={onRetry}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-amber-500/20 text-amber-400 rounded hover:bg-amber-500/30 transition-colors"
-      >
-        <RefreshCw className="w-4 h-4" />
-        Retry
-      </button>
-    </div>
-  );
-}
-
 interface AppWrapperProps {
   appId: string;
   AppComponent: ComponentType<AppProps>;
@@ -141,6 +117,7 @@ export function AppWrapper({ appId, AppComponent, appProps, onClose }: AppWrappe
 /**
  * Create a lazy-loaded app component with error handling
  */
+// eslint-disable-next-line react-refresh/only-export-components -- factory co-located with the wrapper component by design
 export function createLazyApp(
   importFn: () => Promise<{ default: ComponentType<AppProps> }>
 ): ComponentType<AppProps> {

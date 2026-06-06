@@ -10,6 +10,7 @@ type ViewMode = 'preview' | 'source' | 'split';
 
 export function LatexViewer({ filePath, isActive }: AppProps) {
   const { fileApi } = useAppContext();
+  const { subscribeToFile } = useFileWatcher();
 
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
@@ -39,11 +40,15 @@ export function LatexViewer({ filePath, isActive }: AppProps) {
   }, [loadFile]);
 
   // Watch for external file changes
-  useFileWatcher(filePath, () => {
-    if (isActive) {
-      setExternalChangeDetected(true);
-    }
-  });
+  useEffect(() => {
+    if (!filePath) return;
+    const unsubscribe = subscribeToFile(filePath, () => {
+      if (isActive) {
+        setExternalChangeDetected(true);
+      }
+    });
+    return unsubscribe;
+  }, [filePath, isActive, subscribeToFile]);
 
   const handleReload = () => {
     loadFile();

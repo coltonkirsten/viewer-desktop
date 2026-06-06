@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, memo } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo, memo } from 'react';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useFileSystemStore } from '../../stores/fileSystemStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -37,7 +37,6 @@ export const Desktop = memo(function Desktop({ workspaceId }: DesktopProps) {
   const [showSearch, setShowSearch] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
 
-  const settings = useSettingsStore(s => s.settings);
   const loadSettings = useSettingsStore(s => s.loadSettings);
   const openWorkspace = useWorkspaceStore(s => s.openWorkspace);
 
@@ -46,7 +45,7 @@ export const Desktop = memo(function Desktop({ workspaceId }: DesktopProps) {
 
   // Get windows from THIS workspace (not active workspace)
   const workspace = workspaces.find(w => w.id === workspaceId);
-  const windows = workspace?.windows || [];
+  const windows = useMemo(() => workspace?.windows || [], [workspace?.windows]);
 
   const windowsRef = useRef(windows);
   useEffect(() => {
@@ -138,13 +137,14 @@ export const Desktop = memo(function Desktop({ workspaceId }: DesktopProps) {
   }, [loadSettings]);
 
   // Initialize on workspace change - only sync when THIS workspace becomes active
+  const workspaceRootDir = workspace?.rootDir;
   useEffect(() => {
-    if (isActive && workspace) {
+    if (isActive && workspaceRootDir !== undefined) {
       // Sync file system store with this workspace
-      setRootDir(workspace.rootDir);
+      setRootDir(workspaceRootDir);
       refreshTree();
     }
-  }, [isActive, workspace?.rootDir, setRootDir, refreshTree]);
+  }, [isActive, workspaceRootDir, setRootDir, refreshTree]);
 
   // Navigate to previous or next tab in focused window
   const navigateTab = useCallback((direction: 'prev' | 'next') => {

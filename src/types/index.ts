@@ -76,6 +76,11 @@ export interface FileReadResponse {
   path: string;
   content: string;
   modified: string;
+  isImage?: boolean;
+  /** True when the file no longer exists (e.g. deleted while a tab still references it). */
+  notFound?: boolean;
+  /** Human-readable error when the file could not be read. */
+  error?: string;
 }
 
 export interface FileWriteResponse {

@@ -143,6 +143,16 @@ export function AdvancedSoundEditor({ onSave }: AdvancedSoundEditorProps) {
     playCustomSound([playParams]);
   }, [params, filterEnabled, harmonicsEnabled, distortionEnabled, delayEnabled, panEnabled, pitchEnvEnabled]);
 
+  const resetEffects = useCallback(() => {
+    setFilterEnabled(false);
+    setHarmonicsEnabled(false);
+    setDistortionEnabled(false);
+    setDelayEnabled(false);
+    setPanEnabled(false);
+    setPitchEnvEnabled(false);
+  }, []);
+
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const handleSave = useCallback(() => {
     if (!name.trim()) return;
 
@@ -170,16 +180,7 @@ export function AdvancedSoundEditor({ onSave }: AdvancedSoundEditorProps) {
     setEditingId(null);
     resetEffects();
     if (onSave) onSave();
-  }, [name, params, editingId, onSave, filterEnabled, harmonicsEnabled, distortionEnabled, delayEnabled, panEnabled, pitchEnvEnabled]);
-
-  const resetEffects = () => {
-    setFilterEnabled(false);
-    setHarmonicsEnabled(false);
-    setDistortionEnabled(false);
-    setDelayEnabled(false);
-    setPanEnabled(false);
-    setPitchEnvEnabled(false);
-  };
+  }, [name, params, editingId, onSave, resetEffects, filterEnabled, harmonicsEnabled, distortionEnabled, delayEnabled, panEnabled, pitchEnvEnabled]);
 
   const handleEdit = useCallback((sound: SoundDefinition) => {
     setEditingId(sound.id);
@@ -207,7 +208,7 @@ export function AdvancedSoundEditor({ onSave }: AdvancedSoundEditorProps) {
       }
       if (onSave) onSave();
     },
-    [editingId, onSave]
+    [editingId, onSave, resetEffects]
   );
 
   const handleNew = useCallback(() => {
@@ -215,7 +216,7 @@ export function AdvancedSoundEditor({ onSave }: AdvancedSoundEditorProps) {
     setName('');
     setParams(DEFAULT_PARAMS);
     resetEffects();
-  }, []);
+  }, [resetEffects]);
 
   return (
     <div className="h-full flex">

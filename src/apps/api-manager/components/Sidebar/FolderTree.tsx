@@ -10,10 +10,9 @@ import {
   Folder,
   FolderOpen,
   Plus,
-  Trash2,
   MoreHorizontal,
 } from 'lucide-react';
-import type { ApiFolder, SelectedItem, FolderItem } from '../../types';
+import type { ApiFolder, SelectedItem } from '../../types';
 import { isApiRequest, isWebSocketConfig, isApiFolder } from '../../types';
 
 interface FolderTreeProps {

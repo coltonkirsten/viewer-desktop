@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Trash2, Copy, Send, X } from 'lucide-react';
+import { Trash2, Copy } from 'lucide-react';
 import type { ApiRequest } from '../../types';
 import { UrlBar } from './UrlBar';
 import { HeadersPanel } from './HeadersPanel';

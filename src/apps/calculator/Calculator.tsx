@@ -4,6 +4,33 @@ import type { AppProps } from '../types';
 
 type Operation = '+' | '-' | '×' | '÷' | null;
 
+function Button({
+  children,
+  onClick,
+  className = '',
+  span = 1,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+  span?: number;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center justify-center text-xl font-medium
+        rounded-lg transition-all duration-150
+        hover:brightness-110 active:scale-95
+        ${span === 2 ? 'col-span-2' : ''}
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Calculator({ isActive }: AppProps) {
   const [display, setDisplay] = useState('0');
   const [previousValue, setPreviousValue] = useState<number | null>(null);
@@ -144,31 +171,6 @@ export function Calculator({ isActive }: AppProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isActive, inputDigit, inputDecimal, performOperation, calculate, clear, backspace, inputPercent]);
-
-  const Button = ({
-    children,
-    onClick,
-    className = '',
-    span = 1,
-  }: {
-    children: React.ReactNode;
-    onClick: () => void;
-    className?: string;
-    span?: number;
-  }) => (
-    <button
-      onClick={onClick}
-      className={`
-        flex items-center justify-center text-xl font-medium
-        rounded-lg transition-all duration-150
-        hover:brightness-110 active:scale-95
-        ${span === 2 ? 'col-span-2' : ''}
-        ${className}
-      `}
-    >
-      {children}
-    </button>
-  );
 
   return (
     <div className="h-full flex flex-col p-4 bg-[rgba(10,10,20,0.9)]">

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGraphStore, selectSearchResults } from '../../store/graphStore';
@@ -23,26 +23,32 @@ export function SearchPanel({ onClose }: SearchPanelProps) {
   const nodes = useGraphStore((s) => s.nodes);
 
   // Filter to only matched nodes when there's a query
-  const matchedNodes = searchQuery.trim()
-    ? results.filter((n) => {
-        const query = searchQuery.toLowerCase();
-        return (
-          n.title.toLowerCase().includes(query) ||
-          n.body.toLowerCase().includes(query) ||
-          n.tags?.some((t) => t.toLowerCase().includes(query))
-        );
-      })
-    : [];
+  const matchedNodes = useMemo(
+    () =>
+      searchQuery.trim()
+        ? results.filter((n) => {
+            const query = searchQuery.toLowerCase();
+            return (
+              n.title.toLowerCase().includes(query) ||
+              n.body.toLowerCase().includes(query) ||
+              n.tags?.some((t) => t.toLowerCase().includes(query))
+            );
+          })
+        : [],
+    [searchQuery, results]
+  );
 
   // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Reset index when query changes
-  useEffect(() => {
+  // Reset index when the query changes (render-phase state adjustment)
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+  if (searchQuery !== prevSearchQuery) {
+    setPrevSearchQuery(searchQuery);
     setCurrentIndex(0);
-  }, [searchQuery]);
+  }
 
   const navigateToNode = useCallback((nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);

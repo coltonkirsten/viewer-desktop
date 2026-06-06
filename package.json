@@ -14,8 +14,12 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "package": "electron-builder",
+    "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.electron.json",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "check": "npm run typecheck && npm run lint",
     "postinstall": "electron-rebuild",
+    "prepare": "git config core.hooksPath scripts/githooks || true",
     "install-cli": "chmod +x bin/viewer bin/viewer-ctl bin/install-cli.sh && bin/install-cli.sh"
   },
   "dependencies": {

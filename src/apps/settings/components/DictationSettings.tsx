@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Mic, Eye, EyeOff, Keyboard, Globe, Info } from 'lucide-react';
-import { useSettingsStore, type DictationSettings as DictationSettingsType } from '../../../stores/settingsStore';
+import { useSettingsStore } from '../../../stores/settingsStore';
 
 const LANGUAGES = [
   { code: null, label: 'Auto-detect' },
@@ -27,6 +27,7 @@ export function DictationSettings() {
 
   // Update local state when settings change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setApiKeyInput(dictation.openAiApiKey || '');
   }, [dictation.openAiApiKey]);
 

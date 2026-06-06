@@ -11,7 +11,6 @@ import type {
   Environment,
   AuthConfig,
   RequestBody,
-  KeyValuePair,
   OAuth2Auth,
 } from '../types';
 import { resolveVariables, resolveKeyValuePairs } from './useEnvironments';

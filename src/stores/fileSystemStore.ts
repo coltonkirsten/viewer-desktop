@@ -79,7 +79,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
 
   setTree: (tree) => {
     // When setting a new tree, mark the root as loaded (since depth 1 is included)
-    set((state) => ({
+    set(() => ({
       tree,
       loadedDirs: new Set([tree.path]),
       loadingDirs: new Set(),
@@ -233,7 +233,7 @@ export const useFileSystemStore = create<FileSystemStore>((set, get) => ({
   },
 
   initRootDir: async () => {
-    const rootDir = await window.electron.app.getRootDir();
+    const rootDir = (await window.electron.app.getRootDir()) ?? '';
     set({
       rootDir,
       expandedDirs: new Set([rootDir]),

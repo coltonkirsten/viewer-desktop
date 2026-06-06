@@ -122,7 +122,7 @@ export function TerminalViewer({ sessionId, isActive = true }: TerminalViewerPro
       if (fitAddonRef.current && terminalRef.current) {
         try {
           fitAddonRef.current.fit();
-        } catch (e) {
+        } catch {
           // Ignore resize errors during transitions
         }
       }

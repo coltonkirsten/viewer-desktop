@@ -1,6 +1,6 @@
 import { RotateCcw } from 'lucide-react';
 import type { AirplaneState } from '../types';
-import { DEFAULT_STATE, FORCE_LIMITS, BANK_ANGLE_LIMITS, COLORS } from '../constants';
+import { FORCE_LIMITS, BANK_ANGLE_LIMITS, COLORS } from '../constants';
 
 interface ControlPanelProps {
   state: AirplaneState;

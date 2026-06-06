@@ -53,8 +53,11 @@ export function PdfViewer({ filePath }: AppProps) {
     setCurrentPage(1);
   };
 
-  const goToPrevPage = () => setCurrentPage((p) => Math.max(1, p - 1));
-  const goToNextPage = () => setCurrentPage((p) => Math.min(numPages, p + 1));
+  const goToPrevPage = useCallback(() => setCurrentPage((p) => Math.max(1, p - 1)), []);
+  const goToNextPage = useCallback(
+    () => setCurrentPage((p) => Math.min(numPages, p + 1)),
+    [numPages]
+  );
   const handleZoomIn = () => setScale((s) => Math.min(3, s + 0.25));
   const handleZoomOut = () => setScale((s) => Math.max(0.25, s - 0.25));
   const handlePageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,12 +67,12 @@ export function PdfViewer({ filePath }: AppProps) {
     }
   };
 
-  const toggleSearch = () => {
+  const toggleSearch = useCallback(() => {
     setShowSearch(!showSearch);
     if (showSearch) {
       setSearchText('');
     }
-  };
+  }, [showSearch]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -88,7 +91,7 @@ export function PdfViewer({ filePath }: AppProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [numPages, showSearch]);
+  }, [goToPrevPage, goToNextPage, toggleSearch]);
 
   if (loading) {
     return (
@@ -227,7 +230,7 @@ export function PdfViewer({ filePath }: AppProps) {
                     const regex = new RegExp(`(${searchText})`, 'gi');
                     const parts = str.split(regex);
                     return parts
-                      .map((part, i) =>
+                      .map((part) =>
                         regex.test(part)
                           ? `<mark style="background-color: yellow; color: black;">${part}</mark>`
                           : part

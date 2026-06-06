@@ -4,7 +4,7 @@
  * Each sound is defined with its synthesis parameters.
  */
 
-import type { SoundDefinition, SoundCategory, ToneParameters } from './types';
+import type { SoundDefinition, SoundCategory } from './types';
 import { playTone, playMultiTone, playNoiseBurst } from './synthesis';
 
 // ========== TAP FAMILY ==========

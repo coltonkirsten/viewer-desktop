@@ -12,7 +12,6 @@ interface BookmarksBarProps {
 
 export function BookmarksBar({
   bookmarks,
-  currentUrl,
   isBookmarked,
   onBookmarkClick,
   onAddBookmark,

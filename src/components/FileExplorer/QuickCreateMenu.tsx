@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, File, FolderPlus, LayoutDashboard, Bot, Plane } from 'lucide-react';
 import { FILE_TEMPLATES } from '../../templates/fileTemplates';
@@ -46,14 +46,14 @@ export function QuickCreateMenu({ onCreateFile, onCreateFolder, isOpen: controll
   }, [onOpenChange]);
 
   // Build menu items array
-  const menuItems: MenuItem[] = [
+  const menuItems: MenuItem[] = useMemo(() => [
     { id: 'new-file', action: () => onCreateFile() },
     { id: 'new-folder', action: () => onCreateFolder() },
     ...FILE_TEMPLATES.map(t => ({
       id: t.extension,
       action: () => onCreateFile(t.extension),
     })),
-  ];
+  ], [onCreateFile, onCreateFolder]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -146,6 +146,10 @@ export function QuickCreateMenu({ onCreateFile, onCreateFolder, isOpen: controll
       : `${baseClass} hover:bg-[var(--holo-accent)]/20`;
   };
 
+  // Reads the (already-mounted) trigger button's rect to position the portal menu.
+  // eslint-disable-next-line react-hooks/refs
+  const menuPositionStyle = getMenuPosition();
+
   return (
     <>
       <button
@@ -162,7 +166,7 @@ export function QuickCreateMenu({ onCreateFile, onCreateFolder, isOpen: controll
           <div
             ref={menuRef}
             className="fixed bg-[rgba(15,15,25,0.95)] border border-[var(--holo-border)] rounded-lg py-1 min-w-[180px] z-[9999] shadow-xl backdrop-blur-sm"
-            style={getMenuPosition()}
+            style={menuPositionStyle}
           >
             {/* Generic file option */}
             <button

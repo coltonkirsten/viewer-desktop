@@ -85,7 +85,7 @@ export function resolveImportPath(
   const fromDir = fromFile.substring(0, fromFile.lastIndexOf('/'));
 
   // Resolve the relative path
-  let resolved = resolvePath(fromDir, importSource);
+  const resolved = resolvePath(fromDir, importSource);
 
   // Try various extensions and index files
   const extensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', ''];

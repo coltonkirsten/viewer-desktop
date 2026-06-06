@@ -1,6 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import * as pty from 'node-pty';
-import os from 'os';
 import fs from 'fs';
 
 interface TerminalSession {

@@ -173,19 +173,12 @@ export function useKanbanKeyboard({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isActive, hasOpenModal, selectedCard, columns, onNewCard, onEditCard, onCloseModal, navigateCard]);
 
-  // Clear selection when columns change significantly
-  const clearSelectionIfGone = useCallback(() => {
-    if (selectedCard) {
-      const stillExists = findCardPosition(selectedCard.cardId);
-      if (!stillExists) {
-        setSelectedCard(null);
-      }
-    }
-  }, [selectedCard, findCardPosition]);
-
-  useEffect(() => {
-    clearSelectionIfGone();
-  }, [columns, clearSelectionIfGone]);
+  // Clear selection when the selected card no longer exists in the columns.
+  // Computed during render (React's recommended pattern for adjusting state
+  // in response to prop changes) to avoid a cascading effect render.
+  if (selectedCard && !findCardPosition(selectedCard.cardId)) {
+    setSelectedCard(null);
+  }
 
   return {
     selectedCard,

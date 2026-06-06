@@ -1,7 +1,6 @@
 // Browser mock for Electron APIs - allows the app to run in browser mode for testing/exploration
 // This provides stub implementations that allow the UI to render without crashing
 
-const noop = () => {};
 const noopPromise = () => Promise.resolve();
 const noopUnsubscribe = () => () => {};
 
@@ -124,7 +123,7 @@ if (isBrowser) {
     },
   };
 
-  (window as any).electron = mockElectron;
+  (window as unknown as Record<string, unknown>).electron = mockElectron;
   console.log('[Browser Mock] Electron APIs mocked successfully');
 }
 

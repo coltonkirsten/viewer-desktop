@@ -19,13 +19,10 @@ import {
   type ClaudeSettings,
 } from '../services/mcpServerManager';
 
-let getMainWindowFn: (() => BrowserWindow | null) | null = null;
-
 /**
  * Register all MCP-related IPC handlers
  */
-export function registerMcpHandlers(getMainWindow: () => BrowserWindow | null): void {
-  getMainWindowFn = getMainWindow;
+export function registerMcpHandlers(_getMainWindow: () => BrowserWindow | null): void {
   const manager = getMcpServerManager();
 
   // Set up event forwarding to renderer
@@ -143,5 +140,4 @@ function broadcastToWindows(channel: string, ...args: unknown[]): void {
  */
 export function cleanupMcpHandlers(): void {
   cleanupMcpServerManager();
-  getMainWindowFn = null;
 }

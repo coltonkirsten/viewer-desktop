@@ -12,7 +12,6 @@ import {
   extractImports,
   resolveImportPath,
   shouldScanFile,
-  isExternalImport,
 } from './importParser';
 
 const DEFAULT_OPTIONS: Required<ScanOptions> = {

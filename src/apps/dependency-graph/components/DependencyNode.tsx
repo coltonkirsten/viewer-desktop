@@ -3,7 +3,7 @@
  */
 
 import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import type { DependencyNodeData } from '../types';
 
 const EXTENSION_COLORS: Record<string, string> = {
@@ -24,7 +24,7 @@ const EXTENSION_BADGES: Record<string, string> = {
   cjs: 'bg-yellow-600/30 text-yellow-200',
 };
 
-function DependencyNodeComponent({ data, selected }: NodeProps<DependencyNodeData>) {
+function DependencyNodeComponent({ data, selected }: NodeProps<Node<DependencyNodeData>>) {
   const colorClass = data.isExternal
     ? 'border-gray-500 bg-gray-500/10'
     : data.isEntryPoint

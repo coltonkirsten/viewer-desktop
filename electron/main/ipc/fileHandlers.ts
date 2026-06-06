@@ -150,50 +150,66 @@ export function registerFileHandlers(getRootDir: () => string) {
   // Read file contents
   ipcMain.handle('fs:readFile', async (_, filePath: string) => {
     const rootDir = getRootDir();
+    // Keep the security check OUTSIDE the try/catch so access-denied errors are
+    // never swallowed/treated as a missing file.
     const resolvedPath = validatePath(filePath, rootDir);
 
-    const stats = await fs.stat(resolvedPath);
+    try {
+      const stats = await fs.stat(resolvedPath);
 
-    // Check if it's a binary file (image, PDF, or audio)
-    const ext = path.extname(resolvedPath).toLowerCase();
-    const binaryExts = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.pdf', '.mp3', '.wav', '.ogg', '.m4a', '.flac'];
+      // Check if it's a binary file (image, PDF, or audio)
+      const ext = path.extname(resolvedPath).toLowerCase();
+      const binaryExts = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.ico', '.pdf', '.mp3', '.wav', '.ogg', '.m4a', '.flac'];
 
-    if (binaryExts.includes(ext)) {
-      // Return base64 encoded content
-      const content = await fs.readFile(resolvedPath);
-      const base64 = content.toString('base64');
-      const mimeTypes: Record<string, string> = {
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.gif': 'image/gif',
-        '.svg': 'image/svg+xml',
-        '.webp': 'image/webp',
-        '.ico': 'image/x-icon',
-        '.pdf': 'application/pdf',
-        '.mp3': 'audio/mpeg',
-        '.wav': 'audio/wav',
-        '.ogg': 'audio/ogg',
-        '.m4a': 'audio/mp4',
-        '.flac': 'audio/flac',
-      };
-      const audioExts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
-      const isImage = !audioExts.includes(ext) && ext !== '.pdf';
+      if (binaryExts.includes(ext)) {
+        // Return base64 encoded content
+        const content = await fs.readFile(resolvedPath);
+        const base64 = content.toString('base64');
+        const mimeTypes: Record<string, string> = {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.svg': 'image/svg+xml',
+          '.webp': 'image/webp',
+          '.ico': 'image/x-icon',
+          '.pdf': 'application/pdf',
+          '.mp3': 'audio/mpeg',
+          '.wav': 'audio/wav',
+          '.ogg': 'audio/ogg',
+          '.m4a': 'audio/mp4',
+          '.flac': 'audio/flac',
+        };
+        const audioExts = ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
+        const isImage = !audioExts.includes(ext) && ext !== '.pdf';
+        return {
+          path: resolvedPath,
+          content: `data:${mimeTypes[ext] || 'application/octet-stream'};base64,${base64}`,
+          modified: stats.mtime.toISOString(),
+          isImage,
+          isPdf: ext === '.pdf',
+        };
+      }
+
+      const content = await fs.readFile(resolvedPath, 'utf-8');
       return {
         path: resolvedPath,
-        content: `data:${mimeTypes[ext] || 'application/octet-stream'};base64,${base64}`,
+        content,
         modified: stats.mtime.toISOString(),
-        isImage,
-        isPdf: ext === '.pdf',
       };
+    } catch (err) {
+      // File was deleted/moved (e.g. a persisted tab still references it).
+      // Degrade gracefully instead of rejecting the IPC call.
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        return {
+          path: resolvedPath,
+          content: '',
+          modified: new Date().toISOString(),
+          notFound: true,
+        };
+      }
+      throw err;
     }
-
-    const content = await fs.readFile(resolvedPath, 'utf-8');
-    return {
-      path: resolvedPath,
-      content,
-      modified: stats.mtime.toISOString(),
-    };
   });
 
   // Write file contents

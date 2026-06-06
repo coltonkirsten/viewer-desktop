@@ -8,7 +8,6 @@
 
 import { useState, useCallback } from 'react';
 import { Wrench, FileText, MessageSquare, Activity } from 'lucide-react';
-import type { AppProps } from '../types';
 import type { TabId } from './types';
 import { useMcpServers } from './hooks/useMcpServers';
 import { useMcpConnection } from './hooks/useMcpConnection';
@@ -26,7 +25,7 @@ const tabs: { id: TabId; label: string; icon: typeof Wrench }[] = [
   { id: 'messages', label: 'Messages', icon: Activity },
 ];
 
-export function McpInspector({ isActive }: AppProps) {
+export function McpInspector() {
   const [activeTab, setActiveTab] = useState<TabId>('tools');
   const [messageLogExpanded, setMessageLogExpanded] = useState(false);
 

@@ -44,14 +44,14 @@ export function DetailsSidebar({ onClose }: DetailsSidebarProps) {
     bodyRef.current = { body, bodyPlainText };
   }, [body, bodyPlainText]);
 
-  // Sync local state when node changes
-  useEffect(() => {
-    if (node) {
-      setTitle(node.title);
-      setBody(node.body);
-      setBodyPlainText(node.bodyPlainText || '');
-    }
-  }, [node?.id]);
+  // Sync local edit state when the selected node changes (render-phase adjustment)
+  const [syncedNodeId, setSyncedNodeId] = useState(node?.id);
+  if (node && node.id !== syncedNodeId) {
+    setSyncedNodeId(node.id);
+    setTitle(node.title);
+    setBody(node.body);
+    setBodyPlainText(node.bodyPlainText || '');
+  }
 
   // Save title changes with debounce
   useEffect(() => {
@@ -131,9 +131,6 @@ export function DetailsSidebar({ onClose }: DetailsSidebarProps) {
       </div>
     );
   }
-
-  const nodeType = NODE_TYPES[node.type];
-  const category = categories.find((c) => c.id === node.categoryId);
 
   return (
     <div className="w-[360px] h-full bg-[var(--holo-bg)]/95 border-l border-[var(--holo-border)] flex flex-col overflow-hidden">

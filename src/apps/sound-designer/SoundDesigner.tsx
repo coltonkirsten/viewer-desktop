@@ -10,11 +10,7 @@ import { WaveformVisualizer } from './components/WaveformVisualizer';
 
 type Tab = 'bindings' | 'library' | 'custom' | 'visualizer';
 
-interface SoundDesignerProps {
-  isActive?: boolean;
-}
-
-export function SoundDesigner({ isActive }: SoundDesignerProps) {
+export function SoundDesigner() {
   const [activeTab, setActiveTab] = useState<Tab>('bindings');
   const saveConfig = useWorkspaceStore((s) => s.saveConfig);
 

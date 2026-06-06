@@ -138,13 +138,8 @@ async function openFolderDialog(addToExisting = false) {
 
 async function changeRootDir(newRootDir: string) {
   rootDir = newRootDir;
-  if (fileWatcher && mainWindow) {
-    if (rootDir) {
-      await fileWatcher.changeRoot(newRootDir, mainWindow);
-    }
-  } else if (fileWatcher && mainWindow && newRootDir) {
-    // Start watcher if it wasn't running
-    await fileWatcher.start(newRootDir, mainWindow);
+  if (fileWatcher && mainWindow && rootDir) {
+    await fileWatcher.changeRoot(newRootDir, mainWindow);
   }
 }
 
@@ -176,8 +171,15 @@ function registerIpcHandlers() {
     return null;
   });
 
+  // File/terminal handlers require an open workspace; throw (caught as an IPC
+  // error) rather than operating without a root directory.
+  const requireRootDir = (): string => {
+    if (rootDir === null) throw new Error('No workspace is open');
+    return rootDir;
+  };
+
   // Register file operation handlers
-  registerFileHandlers(() => rootDir);
+  registerFileHandlers(requireRootDir);
 
   // Watch/unwatch directory handlers for lazy loading
   ipcMain.handle('fs:watchDir', async (_, dirPath: string) => {
@@ -198,7 +200,7 @@ function registerIpcHandlers() {
   registerConfigHandlers();
 
   // Register terminal handlers
-  registerTerminalHandlers(() => mainWindow, () => rootDir);
+  registerTerminalHandlers(() => mainWindow, requireRootDir);
 
   // Register browser handlers
   registerBrowserHandlers();

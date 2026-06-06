@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Wifi, WifiOff, Trash2, Copy, Loader2 } from 'lucide-react';
+import { Wifi, WifiOff, Trash2, Loader2 } from 'lucide-react';
 import type { WebSocketConfig, WebSocketState } from '../../types';
 import { MessageList } from './MessageList';
 import { MessageComposer } from './MessageComposer';

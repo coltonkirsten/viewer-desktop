@@ -17,7 +17,7 @@ import { CustomNode } from './CustomNode';
 import { FloatingEdge } from './FloatingEdge';
 import { EdgeLabelInput } from './EdgeLabelInput';
 import { useGraphStore } from '../../store/graphStore';
-import type { GraphNode, GraphEdge } from '../../types';
+import type { GraphNode } from '../../types';
 
 const nodeTypes = { custom: CustomNode };
 const edgeTypes = { floating: FloatingEdge };
@@ -44,7 +44,6 @@ export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCan
   const storeNodes = useGraphStore((s) => s.nodes);
   const storeEdges = useGraphStore((s) => s.edges);
   const settings = useGraphStore((s) => s.settings);
-  const selectedNodeIds = useGraphStore((s) => s.selectedNodeIds);
   const searchQuery = useGraphStore((s) => s.searchQuery);
   const viewport = useGraphStore((s) => s.viewport);
   const edgeCreationMode = useGraphStore((s) => s.edgeCreationMode);
@@ -93,7 +92,7 @@ export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCan
       source: edge.source,
       target: edge.target,
       type: 'floating',
-      data: edge,
+      data: { ...edge },
     }));
   }, [storeEdges]);
 
@@ -236,7 +235,7 @@ export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCan
         onDoubleClick={handlePaneDoubleClick}
         onMoveEnd={handleMoveEnd}
         onNodeContextMenu={onNodeContextMenu}
-        onPaneContextMenu={onCanvasContextMenu}
+        onPaneContextMenu={onCanvasContextMenu as ((event: MouseEvent | React.MouseEvent) => void) | undefined}
         defaultViewport={viewport}
         snapToGrid={settings.snapToGrid}
         snapGrid={[settings.gridSize, settings.gridSize]}
@@ -274,7 +273,7 @@ export function GraphCanvas({ onNodeContextMenu, onCanvasContextMenu }: GraphCan
           <MiniMap
             className="!bg-[var(--holo-bg)]/80 !border-[var(--holo-border)] !rounded-lg"
             nodeColor={(node) => {
-              const data = node.data as GraphNode;
+              const data = node.data as unknown as GraphNode;
               return data.color || '#60a5fa';
             }}
             maskColor="rgba(0, 0, 0, 0.7)"

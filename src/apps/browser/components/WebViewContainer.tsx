@@ -1,4 +1,4 @@
-import { useEffect, useRef, useImperativeHandle, forwardRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useState } from 'react';
 import type { BrowserState, WebViewRef } from '../types';
 import { HOME_PAGE, BLOCKED_PROTOCOLS } from '../constants';
 
@@ -17,7 +17,7 @@ export const WebViewContainer = forwardRef<WebViewRef, WebViewContainerProps>(
     const pendingUpdatesRef = useRef<Partial<BrowserState> | null>(null);
     const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const emitStateChange = (updates: Partial<BrowserState>) => {
+    const emitStateChange = useCallback((updates: Partial<BrowserState>) => {
       pendingUpdatesRef.current = { ...(pendingUpdatesRef.current || {}), ...updates };
       if (flushTimerRef.current) return;
 
@@ -27,7 +27,7 @@ export const WebViewContainer = forwardRef<WebViewRef, WebViewContainerProps>(
         pendingUpdatesRef.current = null;
         if (pending) onStateChange(pending);
       }, 100);
-    };
+    }, [onStateChange]);
 
     // Expose webview methods via ref
     useImperativeHandle(ref, () => ({
@@ -100,7 +100,7 @@ export const WebViewContainer = forwardRef<WebViewRef, WebViewContainerProps>(
         }
       };
 
-      const handleNewWindow = (event: Electron.NewWindowEvent) => {
+      const handleNewWindow = (event: { preventDefault: () => void; url: string }) => {
         event.preventDefault();
         // Open in the same webview instead of new window
         const protocol = new URL(event.url).protocol;
@@ -127,7 +127,7 @@ export const WebViewContainer = forwardRef<WebViewRef, WebViewContainerProps>(
       webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage as EventListener);
       webview.addEventListener('page-title-updated', handlePageTitleUpdated as EventListener);
       webview.addEventListener('did-fail-load', handleDidFailLoad as EventListener);
-      webview.addEventListener('new-window', handleNewWindow as EventListener);
+      webview.addEventListener('new-window', handleNewWindow as unknown as EventListener);
       webview.addEventListener('will-navigate', handleWillNavigate as EventListener);
 
       return () => {
@@ -143,10 +143,10 @@ export const WebViewContainer = forwardRef<WebViewRef, WebViewContainerProps>(
         webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage as EventListener);
         webview.removeEventListener('page-title-updated', handlePageTitleUpdated as EventListener);
         webview.removeEventListener('did-fail-load', handleDidFailLoad as EventListener);
-        webview.removeEventListener('new-window', handleNewWindow as EventListener);
+        webview.removeEventListener('new-window', handleNewWindow as unknown as EventListener);
         webview.removeEventListener('will-navigate', handleWillNavigate as EventListener);
       };
-    }, [onStateChange, onTitleChange]);
+    }, [emitStateChange, onTitleChange]);
 
     return (
       <div ref={containerRef} className="flex-1 relative overflow-hidden">

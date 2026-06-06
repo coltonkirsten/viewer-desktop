@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { GraphStore, GraphNode, GraphEdge, Category, MindmapFile, MindmapSettings, NodeType } from '../types';
-import { generateId, createNode, createEdge, createEmptyMindmap, DEFAULT_SETTINGS, DEFAULT_CATEGORIES } from '../constants';
+import type { GraphStore, GraphNode, GraphEdge, NodeType } from '../types';
+import { generateId, createNode, createEdge, DEFAULT_SETTINGS, DEFAULT_CATEGORIES } from '../constants';
 
 const initialState = {
   nodes: [] as GraphNode[],

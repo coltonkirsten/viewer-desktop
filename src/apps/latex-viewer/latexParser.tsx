@@ -1,12 +1,5 @@
 import katex from 'katex';
-import { ReactNode } from 'react';
-
-interface ParsedElement {
-  type: 'text' | 'section' | 'subsection' | 'subsubsection' | 'paragraph' | 'math-inline' | 'math-display' | 'bold' | 'italic' | 'underline' | 'itemize' | 'enumerate' | 'item' | 'title' | 'author' | 'date' | 'abstract' | 'code' | 'quote' | 'href' | 'newline';
-  content: string;
-  children?: ParsedElement[];
-  url?: string;
-}
+import { type ReactNode } from 'react';
 
 // Render KaTeX math
 function renderMath(latex: string, displayMode: boolean): string {
@@ -435,7 +428,7 @@ export function parseLatex(source: string): ReactNode {
 
     if (nextStructure === -1 || nextStructure > 0) {
       const paraEnd = nextStructure === -1 ? remaining.length : nextStructure;
-      let paraText = remaining.slice(0, paraEnd).trim();
+      const paraText = remaining.slice(0, paraEnd).trim();
 
       // Split by double newlines for separate paragraphs
       const paragraphs = paraText.split(/\n\s*\n/);

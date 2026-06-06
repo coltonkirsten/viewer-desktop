@@ -67,11 +67,14 @@ export function useFileWatcher() {
       setupIpcListener();
     }
 
+    // Capture the stable subscriptions map for use in cleanup
+    const fileSubscriptions = fileSubscriptionsRef.current;
+
     return () => {
       instanceCount--;
 
       // Clean up all subscriptions from this instance
-      fileSubscriptionsRef.current.forEach((callback, path) => {
+      fileSubscriptions.forEach((callback, path) => {
         const callbacks = globalSubscribers.fileChanges.get(path);
         if (callbacks) {
           callbacks.delete(callback);
@@ -80,7 +83,7 @@ export function useFileWatcher() {
           }
         }
       });
-      fileSubscriptionsRef.current.clear();
+      fileSubscriptions.clear();
 
       if (fsSubscriptionRef.current) {
         globalSubscribers.fileSystem.delete(fsSubscriptionRef.current);

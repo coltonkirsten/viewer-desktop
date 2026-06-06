@@ -5,8 +5,8 @@
 
 import type { ViewerEvent, SoundDefinition, SoundSystemConfig, EventBinding } from './types';
 import { initAudio, setMasterVolume, getMasterVolume, setMuted, isMuted, playCustomSound } from './synthesis';
-import { presetFunctions, presetDefinitions, playPreset } from './presetSounds';
-import { defaultEventSoundMap, getDefaultBindings } from './defaultBindings';
+import { presetDefinitions, playPreset } from './presetSounds';
+import { getDefaultBindings } from './defaultBindings';
 
 class SoundEngine {
   private eventBindings: Map<ViewerEvent, EventBinding> = new Map();

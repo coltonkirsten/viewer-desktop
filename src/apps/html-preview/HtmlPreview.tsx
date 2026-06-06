@@ -5,7 +5,7 @@ import { useFileWatcher } from '../../hooks/useFileWatcher';
 import { useSettingsStore, ACCENT_COLORS } from '../../stores/settingsStore';
 import type { AppProps } from '../types';
 
-export function HtmlPreview({ filePath, isActive }: AppProps) {
+export function HtmlPreview({ filePath }: AppProps) {
   const { fileApi } = useAppContext();
   const { subscribeToFile } = useFileWatcher();
   const accentColor = useSettingsStore(s => s.settings.theme.accentColor);

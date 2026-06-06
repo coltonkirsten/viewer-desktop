@@ -2,7 +2,6 @@ import {
   MousePointer2,
   Sun,
   Minus,
-  CircleDot,
   Triangle,
   Trash2,
   RotateCcw,
@@ -21,13 +20,12 @@ interface ToolbarProps {
   onTogglePanel: () => void;
   canDelete: boolean;
   canSave: boolean;
-  saving: boolean;
   panelOpen: boolean;
 }
 
 interface ToolButtonProps {
   id: Tool;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   currentTool: Tool;
   onClick: (tool: Tool) => void;
@@ -115,7 +113,6 @@ export function Toolbar({
   onTogglePanel,
   canDelete,
   canSave,
-  saving,
   panelOpen,
 }: ToolbarProps) {
   return (

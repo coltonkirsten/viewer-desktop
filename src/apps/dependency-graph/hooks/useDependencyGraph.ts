@@ -4,7 +4,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { DependencyGraph, ScanOptions } from '../types';
-import { buildDependencyGraph, getGraphStats, filterGraphByProximity } from '../utils/graphBuilder';
+import { buildDependencyGraph, getGraphStats } from '../utils/graphBuilder';
 import { layoutGraph, type LayoutDirection } from '../utils/layoutEngine';
 import type { Node, Edge } from '@xyflow/react';
 import type { DependencyNodeData } from '../types';
@@ -42,7 +42,7 @@ interface UseDependencyGraphReturn {
   setMaxDepth: (depth: number) => void;
   setExcludePatterns: (patterns: string[]) => void;
   focusOnNode: (nodeId: string) => void;
-  getNodeData: (nodeId: string) => DependencyGraph['nodes'] extends Map<string, infer T> ? T : never | undefined;
+  getNodeData: (nodeId: string) => (DependencyGraph['nodes'] extends Map<string, infer T> ? T : never) | undefined;
 }
 
 export function useDependencyGraph({
@@ -141,11 +141,16 @@ export function useDependencyGraph({
       }, 300);
       return () => clearTimeout(timer);
     }
+    // Intentionally only re-run when filter values change; `graph`/`refresh`
+    // are excluded to avoid re-triggering the debounce on every rebuild.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showExternal, maxDepth, excludePatterns]);
 
   // Initial scan
   useEffect(() => {
     refresh();
+    // Intentionally run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Select a node

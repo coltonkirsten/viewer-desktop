@@ -12,8 +12,8 @@ import type {
   DragState,
   RenderContext,
 } from './types';
-import { DEFAULTS, UI, PHYSICS } from './constants';
-import { traceRay, generateRaysFromLight, distance, getPrismVertices } from './physics';
+import { DEFAULTS, UI } from './constants';
+import { traceRay, generateRaysFromLight, distance } from './physics';
 import { render } from './renderer';
 import { Toolbar } from './components/Toolbar';
 import { PropertiesPanel } from './components/PropertiesPanel';
@@ -148,14 +148,13 @@ export function Optics({ filePath, isActive }: AppProps) {
 
   // File state
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [externalChangeDetected, setExternalChangeDetected] = useState(false);
 
   // Derived state
-  const lights = scene?.lights || [];
-  const elements = scene?.elements || [];
+  const lights = useMemo(() => scene?.lights || [], [scene]);
+  const elements = useMemo(() => scene?.elements || [], [scene]);
   const settings = scene?.settings || DEFAULTS.settings;
 
   // Find selected items
@@ -225,7 +224,6 @@ export function Optics({ filePath, isActive }: AppProps) {
   // Save scene
   const handleSave = useCallback(async () => {
     if (!scene || !currentFilePath) return;
-    setSaving(true);
     setError(null);
 
     try {
@@ -241,10 +239,65 @@ export function Optics({ filePath, isActive }: AppProps) {
     } catch (err) {
       console.error('Failed to save scene:', err);
       setError('Unable to save scene');
-    } finally {
-      setSaving(false);
     }
   }, [scene, currentFilePath, fileApi, setDirty]);
+
+  // Mark dirty helper
+  const markDirty = useCallback(
+    (updatedScene: OpticsScene) => {
+      setScene(updatedScene);
+      setHasUnsavedChanges(true);
+      setDirty(true);
+    },
+    [setDirty]
+  );
+
+  // Update light
+  const updateLight = useCallback(
+    (id: string, updates: Partial<LightSource>) => {
+      if (!scene) return;
+      markDirty({
+        ...scene,
+        lights: scene.lights.map((l) => (l.id === id ? { ...l, ...updates } : l)),
+      });
+    },
+    [scene, markDirty]
+  );
+
+  // Update element
+  const updateElement = useCallback(
+    (id: string, kind: OpticalElement['kind'], updates: Record<string, unknown>) => {
+      if (!scene) return;
+      markDirty({
+        ...scene,
+        elements: scene.elements.map((el) =>
+          el.data.id === id && el.kind === kind
+            ? ({ ...el, data: { ...el.data, ...updates } } as OpticalElement)
+            : el
+        ),
+      });
+    },
+    [scene, markDirty]
+  );
+
+  // Delete selected
+  const deleteSelected = useCallback(() => {
+    if (!scene || !selectedId) return;
+    markDirty({
+      ...scene,
+      lights: scene.lights.filter((l) => l.id !== selectedId),
+      elements: scene.elements.filter((el) => el.data.id !== selectedId),
+    });
+    setSelectedId(null);
+  }, [scene, selectedId, markDirty]);
+
+  // Reset scene
+  const resetScene = useCallback(() => {
+    setScene(createDefaultScene());
+    setSelectedId(null);
+    setHasUnsavedChanges(true);
+    setDirty(true);
+  }, [setDirty]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -289,64 +342,7 @@ export function Optics({ filePath, isActive }: AppProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isActive, selectedId, selectedLight, hasUnsavedChanges, currentFilePath, handleSave]);
-
-  // Mark dirty helper
-  const markDirty = useCallback(
-    (updatedScene: OpticsScene) => {
-      setScene(updatedScene);
-      setHasUnsavedChanges(true);
-      setDirty(true);
-    },
-    [setDirty]
-  );
-
-  // Update light
-  const updateLight = useCallback(
-    (id: string, updates: Partial<LightSource>) => {
-      if (!scene) return;
-      markDirty({
-        ...scene,
-        lights: scene.lights.map((l) => (l.id === id ? { ...l, ...updates } : l)),
-      });
-    },
-    [scene, markDirty]
-  );
-
-  // Update element
-  const updateElement = useCallback(
-    (id: string, kind: OpticalElement['kind'], updates: Record<string, unknown>) => {
-      if (!scene) return;
-      markDirty({
-        ...scene,
-        elements: scene.elements.map((el) =>
-          el.data.id === id && el.kind === kind
-            ? { ...el, data: { ...el.data, ...updates } }
-            : el
-        ),
-      });
-    },
-    [scene, markDirty]
-  );
-
-  // Delete selected
-  const deleteSelected = useCallback(() => {
-    if (!scene || !selectedId) return;
-    markDirty({
-      ...scene,
-      lights: scene.lights.filter((l) => l.id !== selectedId),
-      elements: scene.elements.filter((el) => el.data.id !== selectedId),
-    });
-    setSelectedId(null);
-  }, [scene, selectedId, markDirty]);
-
-  // Reset scene
-  const resetScene = useCallback(() => {
-    setScene(createDefaultScene());
-    setSelectedId(null);
-    setHasUnsavedChanges(true);
-    setDirty(true);
-  }, [setDirty]);
+  }, [isActive, selectedId, selectedLight, hasUnsavedChanges, currentFilePath, handleSave, deleteSelected, updateLight]);
 
   // Mouse helpers
   const getMousePos = (e: React.MouseEvent): Point => {
@@ -721,7 +717,6 @@ export function Optics({ filePath, isActive }: AppProps) {
         onTogglePanel={() => setPropertiesPanelOpen(!propertiesPanelOpen)}
         canDelete={!!selectedId}
         canSave={hasUnsavedChanges && !!currentFilePath}
-        saving={saving}
         panelOpen={propertiesPanelOpen}
       />
 

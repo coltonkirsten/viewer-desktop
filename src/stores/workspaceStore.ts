@@ -966,7 +966,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   },
 
   moveTab: (fromWindowId: string, toWindowId: string, tabId: string, index?: number) => {
-    const { activeWorkspaceId, workspaces, closeWindow } = get();
+    const { activeWorkspaceId, workspaces } = get();
     if (!activeWorkspaceId) return;
 
     const workspace = workspaces.find(w => w.id === activeWorkspaceId);
@@ -1337,12 +1337,13 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
         // Load sound config if available
         if (config.soundConfig) {
-          soundEngine.loadConfig(config.soundConfig);
+          soundEngine.loadConfig(config.soundConfig as Parameters<typeof soundEngine.loadConfig>[0]);
         }
 
         // Load workspaces if any were saved
         if (config.workspaces && config.workspaces.length > 0) {
-          const loadedWorkspaces: Workspace[] = config.workspaces.map((ws: SerializedWorkspace, i: number) => ({
+          const serializedWorkspaces = config.workspaces as unknown as SerializedWorkspace[];
+          const loadedWorkspaces: Workspace[] = serializedWorkspaces.map((ws) => ({
             id: `workspace-${++workspaceIdCounter}`,
             rootDir: ws.rootDir,
             name: ws.name,
@@ -1352,7 +1353,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
                 ...tab,
                 id: `tab-${++tabIdCounter}`,
               }));
-              const activeTabId = tabs.find(t => t.isActive)?.id || tabs[0]?.id || null;
+              const activeTabId = tabs.find(t => t.isActive)?.id || tabs[0]?.id || undefined;
               return {
                 ...w,
                 id: newWindowId,
@@ -1398,7 +1399,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       id: w.id,
       rootDir: w.rootDir,
       name: w.name,
-      windows: w.windows.map(({ zIndex, ...rest }) => rest),
+      windows: w.windows.map(({ zIndex: _zIndex, ...rest }) => rest),
       expandedDirs: Array.from(w.expandedDirs),
       selectedPath: w.selectedPath,
     }));
@@ -1412,7 +1413,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     };
 
     try {
-      await window.electron.config.save(config as Parameters<typeof window.electron.config.save>[0]);
+      await window.electron.config.save(config as unknown as Parameters<typeof window.electron.config.save>[0]);
     } catch (err) {
       console.error('Failed to save config:', err);
     }

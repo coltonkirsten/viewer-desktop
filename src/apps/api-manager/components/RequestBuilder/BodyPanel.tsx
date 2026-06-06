@@ -3,9 +3,9 @@
  * Request body editor with type selection
  */
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { Upload, X } from 'lucide-react';
-import type { RequestBody, BodyType, FormDataItem } from '../../types';
+import type { RequestBody, BodyType } from '../../types';
 import { BODY_TYPES, generateId } from '../../constants';
 import { KeyValueEditor } from '../shared/KeyValueEditor';
 

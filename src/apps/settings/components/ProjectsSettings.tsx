@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FolderOpen, X, Check } from 'lucide-react';
+import { FolderOpen, X } from 'lucide-react';
 import { useSettingsStore } from '../../../stores/settingsStore';
 
 export function ProjectsSettings() {

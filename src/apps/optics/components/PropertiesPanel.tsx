@@ -10,7 +10,7 @@ interface PropertiesPanelProps {
   onUpdateElement: (id: string, kind: OpticalElement['kind'], updates: Record<string, unknown>) => void;
 }
 
-function PropertySection({ children, title, icon: Icon }: { children: React.ReactNode; title: string; icon: React.ElementType }) {
+function PropertySection({ children, title, icon: Icon }: { children: React.ReactNode; title: string; icon: React.ComponentType<{ size?: number; className?: string }> }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-[var(--holo-accent)]">

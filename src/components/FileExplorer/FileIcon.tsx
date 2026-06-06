@@ -21,7 +21,7 @@ interface FileIconProps {
 }
 
 interface IconConfig {
-  Icon: React.ComponentType<any>;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
   color: string;
 }
 

@@ -15,6 +15,10 @@ export interface FileReadResponse {
   content: string;
   modified: string;
   isImage?: boolean;
+  /** True when the file no longer exists (e.g. deleted while a tab still references it). */
+  notFound?: boolean;
+  /** Human-readable error when the file could not be read. */
+  error?: string;
 }
 
 export interface FileChangeEvent {
@@ -22,9 +26,18 @@ export interface FileChangeEvent {
   path: string;
 }
 
+// The persisted user config is a heterogeneous JSON blob — different renderer
+// stores read/write their own subsets (windows, workspaces, settings, sound).
+// Fields are optional; the consuming store refines the loosely-typed values.
 export interface ViewerConfig {
-  windows: unknown[];
+  windows?: Array<Record<string, unknown>>;
   expandedDirs?: string[];
+  recentFiles?: string[];
+  favorites?: string[];
+  recentFolders?: Array<{ path: string; name: string; lastOpened: number }>;
+  workspaces?: Array<Record<string, unknown>>;
+  soundConfig?: unknown;
+  appSettings?: unknown;
 }
 
 export interface TerminalCreateResponse {

@@ -8,6 +8,8 @@ export interface AppProps {
   tabId: string;
   filePath?: string;
   isActive: boolean;
+  /** Optional: lets an app report its display title back to the host tab (e.g. the browser). */
+  onTitleChange?: (title: string) => void;
 }
 
 /**

@@ -51,7 +51,7 @@ export function FileExplorer({ isFocused, isSearchOpen }: FileExplorerProps) {
   const { tree, loading, error, refreshTree, selectedPaths, lastSelectedPath, expandedDirs, selectPath, selectPaths, clearSelection, expandDir, collapseDir, toggleDir, showHidden, toggleShowHidden } = useFileSystemStore();
   const { openWindow, addTab, switchTab, focusWindow, getActiveWorkspace } = useWorkspaceStore();
   const activeWorkspace = getActiveWorkspace();
-  const windows = activeWorkspace?.windows || [];
+  const windows = useMemo(() => activeWorkspace?.windows || [], [activeWorkspace?.windows]);
   const { subscribeToFileSystem, connected } = useFileWatcher();
 
   // Container ref for focus management

@@ -1,5 +1,5 @@
 import { BrowserWindow } from 'electron';
-import { subscribe, AsyncSubscription } from '@parcel/watcher';
+import { subscribe, type AsyncSubscription } from '@parcel/watcher';
 import * as path from 'path';
 
 export interface FileChangeEvent {
@@ -16,10 +16,8 @@ const IGNORE_DIRS = new Set([
 export class FileWatcherService {
   private subscription: AsyncSubscription | null = null;
   private mainWindow: BrowserWindow | null = null;
-  private rootDir: string = '';
 
   async start(rootDir: string, mainWindow: BrowserWindow): Promise<void> {
-    this.rootDir = rootDir;
     this.mainWindow = mainWindow;
 
     try {

@@ -17,7 +17,7 @@ import {
 import type { AppProps } from '../types';
 import { useAppContext } from '../AppContext';
 import { useApiWorkspace } from './hooks/useApiWorkspace';
-import type { SelectedItem, ApiRequest, WebSocketConfig, RequestState, WebSocketState } from './types';
+import type { SelectedItem, ApiRequest, WebSocketConfig } from './types';
 import { createEmptyRequest, createEmptyFolder, createEmptyWebSocket } from './constants';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { RequestBuilder } from './components/RequestBuilder/RequestBuilder';
@@ -51,7 +51,6 @@ export function ApiManager({ filePath, isActive }: AppProps) {
     deleteWebSocket,
     addEnvironment,
     updateEnvironment,
-    deleteEnvironment,
     setActiveEnvironment,
     getRequestById,
     getWebSocketById,

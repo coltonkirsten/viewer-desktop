@@ -95,7 +95,7 @@ interface UseApiWorkspaceReturn {
 }
 
 // Helper to find and update items in nested folder structure
-function findInFolders<T>(
+function findInFolders<T extends FolderItem>(
   folders: ApiFolder[],
   predicate: (item: FolderItem) => item is T
 ): T | undefined {

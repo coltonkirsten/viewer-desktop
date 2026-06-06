@@ -6,8 +6,8 @@
  * using stdio transport with JSON-RPC 2.0 protocol.
  */
 
-import { spawn, ChildProcess } from 'child_process';
-import { createInterface, Interface } from 'readline';
+import { spawn, type ChildProcess } from 'child_process';
+import { createInterface, type Interface } from 'readline';
 import { readFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -504,10 +504,11 @@ export class McpServerManager extends EventEmitter {
     // Handle response
     if ('id' in message && message.id !== null && message.id !== undefined) {
       const response = message as JsonRpcResponse;
-      const pending = server.pendingRequests.get(response.id);
+      // Guarded above: message.id is non-null here.
+      const pending = server.pendingRequests.get(response.id!);
 
       if (pending) {
-        server.pendingRequests.delete(response.id);
+        server.pendingRequests.delete(response.id!);
 
         if (response.error) {
           pending.reject(new Error(response.error.message));

@@ -12,6 +12,7 @@ import {
   BackgroundVariant,
   useReactFlow,
   ReactFlowProvider,
+  type Node,
   type OnNodesChange,
   type OnEdgesChange,
   type NodeMouseHandler,
@@ -38,7 +39,6 @@ const nodeTypes = {
 function DependencyGraphInner({ isActive }: AppProps) {
   const { openFile } = useAppContext();
   const rootDir = useFileSystemStore((s) => s.rootDir);
-  const tree = useFileSystemStore((s) => s.tree);
   const reactFlowInstance = useReactFlow();
 
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -106,14 +106,15 @@ function DependencyGraphInner({ isActive }: AppProps) {
   const [localNodes, setLocalNodes] = useState(nodes);
   const [localEdges, setLocalEdges] = useState(edges);
 
-  // Sync when graph updates
+  // Sync local React Flow state when the computed graph updates.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalNodes(nodes);
     setLocalEdges(edges);
   }, [nodes, edges]);
 
   // Handle node changes (dragging, selection)
-  const onNodesChange: OnNodesChange = useCallback(
+  const onNodesChange: OnNodesChange<Node<DependencyNodeData>> = useCallback(
     (changes) => setLocalNodes((nds) => applyNodeChanges(changes, nds)),
     []
   );

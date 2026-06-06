@@ -5,15 +5,16 @@ import type { GraphEdge } from '../../types';
 import { EDGE_TYPES } from '../../constants';
 import { useGraphStore } from '../../store/graphStore';
 
-interface FloatingEdgeData extends Omit<GraphEdge, 'source' | 'target'> {}
+type FloatingEdgeData = Omit<GraphEdge, 'source' | 'target'>;
 
 function FloatingEdgeComponent({
   id,
   source,
   target,
-  data,
+  data: rawData,
   selected,
-}: EdgeProps<FloatingEdgeData>) {
+}: EdgeProps) {
+  const data = rawData as unknown as FloatingEdgeData | undefined;
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   const selectEdge = useGraphStore((s) => s.selectEdge);
@@ -121,7 +122,6 @@ function getArrowPoints(
 ): string {
   const angle = Math.atan2(ty - cy, tx - cx);
   const arrowLength = 10;
-  const arrowWidth = 6;
 
   // Arrow tip is at (tx, ty)
   const tipX = tx;

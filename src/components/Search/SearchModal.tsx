@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Search, X, File, Folder, AppWindow } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
@@ -28,47 +28,46 @@ interface AppResult {
 
 type SearchResult = FileResult | AppResult;
 
+// Flatten tree into searchable list
+function flattenTree(node: FileNode | null, list: FileResult[] = []): FileResult[] {
+  if (!node) return list;
+
+  if (node.type === 'file') {
+    list.push({
+      type: 'file',
+      path: node.path,
+      name: node.name,
+      extension: node.extension,
+    });
+  } else if (node.type === 'directory') {
+    list.push({
+      type: 'directory',
+      path: node.path,
+      name: node.name,
+    });
+    // Recursively process children
+    if (node.children) {
+      node.children.forEach(child => flattenTree(child, list));
+    }
+  }
+
+  return list;
+}
+
 export function SearchModal({ tree, onClose, onSelectFile }: SearchModalProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const { openWindow } = useWorkspaceStore();
 
   // Get app icon component
   const getAppIcon = (iconName: string) => {
-    const Icon = (LucideIcons as Record<string, React.ComponentType<{ size?: number; className?: string }>>)[iconName];
+    const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; className?: string }>>)[iconName];
     return Icon || AppWindow;
   };
 
-  // Flatten tree into searchable list
-  const flattenTree = useCallback((node: FileNode | null, list: FileResult[] = []): FileResult[] => {
-    if (!node) return list;
-
-    if (node.type === 'file') {
-      list.push({
-        type: 'file',
-        path: node.path,
-        name: node.name,
-        extension: node.extension,
-      });
-    } else if (node.type === 'directory') {
-      list.push({
-        type: 'directory',
-        path: node.path,
-        name: node.name,
-      });
-      // Recursively process children
-      if (node.children) {
-        node.children.forEach(child => flattenTree(child, list));
-      }
-    }
-
-    return list;
-  }, []);
-
-  // Search filter function
-  useEffect(() => {
+  // Derive search results from the query + tree (pure — no effect needed)
+  const results = useMemo<SearchResult[]>(() => {
     const queryLower = query.toLowerCase().trim();
 
     // Get all apps
@@ -81,9 +80,7 @@ export function SearchModal({ tree, onClose, onSelectFile }: SearchModalProps) {
 
     // If no query, show just apps
     if (!queryLower) {
-      setResults(appResults);
-      setSelectedIndex(0);
-      return;
+      return appResults;
     }
 
     // Get all files
@@ -119,9 +116,15 @@ export function SearchModal({ tree, onClose, onSelectFile }: SearchModalProps) {
       .slice(0, 50); // Limit to 50 results
 
     // Combine: apps first, then files
-    setResults([...appResults, ...fileResults]);
+    return [...appResults, ...fileResults];
+  }, [query, tree]);
+
+  // Reset the highlighted row when the query changes (render-phase adjustment)
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
     setSelectedIndex(0);
-  }, [query, tree, flattenTree]);
+  }
 
   // Handle selection
   const handleSelect = useCallback((result: SearchResult) => {

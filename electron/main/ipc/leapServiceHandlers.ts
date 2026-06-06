@@ -17,6 +17,8 @@ interface LeapServiceStatus {
   managed: boolean;
   pid: number | null;
   path: string;
+  /** Set when the service is unavailable (e.g. the tracking binary is missing). */
+  error?: string;
 }
 
 let leapProcess: ChildProcess | null = null;
@@ -71,7 +73,15 @@ async function startManagedService(): Promise<LeapServiceStatus> {
   }
 
   if (!existsSync(LEAP_SERVICE_PATH)) {
-    throw new Error(`Leap service binary not found: ${LEAP_SERVICE_PATH}`);
+    // The Ultraleap tracking binary isn't installed/bundled. Rather than throwing
+    // (which spams the renderer with errors), report the service as unavailable.
+    return {
+      running: false,
+      managed: false,
+      pid: null,
+      path: LEAP_SERVICE_PATH,
+      error: `Leap service binary not found: ${LEAP_SERVICE_PATH}`,
+    };
   }
 
   const alreadyRunning = await isPortOpen(LEAP_SERVICE_PORT);

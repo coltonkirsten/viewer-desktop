@@ -5,9 +5,9 @@
  */
 
 import { useState, useCallback, memo } from 'react';
-import { Wrench, ChevronRight, ChevronDown, Play, Loader2 } from 'lucide-react';
+import { Wrench, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
 import type { McpTool } from '../types';
-import { SchemaForm } from './SchemaForm';
+import { SchemaForm, type JsonSchema } from './SchemaForm';
 import { JsonViewer } from './JsonViewer';
 
 interface ToolsPanelProps {
@@ -21,7 +21,7 @@ interface ToolItemProps {
   tool: McpTool;
   expanded: boolean;
   onToggle: () => void;
-  onCall: (args: Record<string, unknown>) => Promise<void>;
+  onCall: (args: Record<string, unknown>) => Promise<unknown>;
 }
 
 interface ToolResult {
@@ -85,7 +85,7 @@ const ToolItem = memo(function ToolItem({ tool, expanded, onToggle, onCall }: To
           <div className="border-t border-[var(--holo-accent)]/10 pt-3">
             <h4 className="text-xs font-medium text-gray-400 mb-2">Parameters</h4>
             <SchemaForm
-              schema={tool.inputSchema}
+              schema={tool.inputSchema as JsonSchema | undefined}
               onSubmit={handleCall}
               submitLabel="Call Tool"
               loading={calling}

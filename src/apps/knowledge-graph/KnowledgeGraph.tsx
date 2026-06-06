@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
 import type { AppProps } from '../types';
@@ -14,7 +14,7 @@ import { MainToolbar } from './components/Toolbar/MainToolbar';
 import { DetailsSidebar } from './components/Sidebar/DetailsSidebar';
 import { SearchPanel } from './components/Search/SearchPanel';
 
-export function KnowledgeGraph({ windowId, tabId, filePath, isActive }: AppProps) {
+export function KnowledgeGraph({ filePath, isActive }: AppProps) {
   const { fileApi, setDirty, updateTab } = useAppContext();
   const { subscribeToFile } = useFileWatcher();
 
@@ -33,7 +33,6 @@ export function KnowledgeGraph({ windowId, tabId, filePath, isActive }: AppProps
   const setSidebarOpen = useGraphStore((s) => s.setSidebarOpen);
   const importData = useGraphStore((s) => s.importData);
   const exportData = useGraphStore((s) => s.exportData);
-  const reset = useGraphStore((s) => s.reset);
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
   // Use useShallow to get stable array reference for selectedNodeIds

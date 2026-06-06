@@ -2,11 +2,6 @@ import { create } from 'zustand';
 import type { WindowState, TabState } from '../types';
 import { calculateTileLayout } from '../utils/tileLayoutCalculator';
 
-interface ViewerConfig {
-  windows: Omit<WindowState, 'zIndex'>[];
-  expandedDirs?: string[];
-}
-
 interface PreTileState {
   position: { x: number; y: number };
   size: { width: number; height: number };
@@ -450,7 +445,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   },
 
   tearOffTab: (windowId, tabId, position) => {
-    const { windows, nextZIndex } = get();
+    const { windows } = get();
     const sourceWindow = windows.find(w => w.id === windowId);
     if (!sourceWindow || !sourceWindow.tabs) return;
 
@@ -599,8 +594,9 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       const config = await window.electron.config.load();
 
       if (config && config.windows && config.windows.length > 0) {
-        // Restore windows with new z-indices
-        const restoredWindows = config.windows.map((w, i) => ({
+        // Restore windows with new z-indices (persisted windows are loosely typed JSON)
+        const persistedWindows = config.windows as unknown as Omit<WindowState, 'id' | 'zIndex'>[];
+        const restoredWindows: WindowState[] = persistedWindows.map((w, i) => ({
           ...w,
           id: `window-${++windowIdCounter}`,
           zIndex: i + 1,
@@ -628,7 +624,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     // Strip z-index from saved state (will be recalculated on load)
     const config = {
       ...existingConfig,
-      windows: windows.map(({ zIndex, ...rest }) => rest),
+      windows: windows.map(({ zIndex: _zIndex, ...rest }) => rest),
     };
 
     try {

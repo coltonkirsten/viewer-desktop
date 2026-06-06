@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { WebSocketConfig, WebSocketState, WebSocketMessage, Environment } from '../types';
-import { resolveVariables, resolveKeyValuePairs } from './useEnvironments';
+import { resolveVariables } from './useEnvironments';
 import { generateId } from '../constants';
 
 interface UseWebSocketReturn {

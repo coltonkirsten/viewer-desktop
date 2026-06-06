@@ -9,7 +9,7 @@ import type { GraphEdge } from '../../types';
 import { EDGE_TYPES } from '../../constants';
 import { useGraphStore } from '../../store/graphStore';
 
-interface CustomEdgeData extends Omit<GraphEdge, 'source' | 'target'> {}
+type CustomEdgeData = Omit<GraphEdge, 'source' | 'target'>;
 
 function CustomEdgeComponent({
   id,
@@ -19,9 +19,10 @@ function CustomEdgeComponent({
   targetY,
   sourcePosition,
   targetPosition,
-  data,
+  data: rawData,
   selected,
-}: EdgeProps<CustomEdgeData>) {
+}: EdgeProps) {
+  const data = rawData as unknown as CustomEdgeData | undefined;
   const selectEdge = useGraphStore((s) => s.selectEdge);
 
   const edgeConfig = EDGE_TYPES[data?.type || 'relates'];

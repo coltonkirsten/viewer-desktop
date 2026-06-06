@@ -95,12 +95,14 @@ export function MermaidViewer({ filePath }: AppProps) {
 
   // Initial file load
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadFile();
   }, [loadFile]);
 
   // Render diagram when content changes
   useEffect(() => {
     if (content) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       renderDiagram();
     }
   }, [content, renderDiagram]);

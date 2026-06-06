@@ -2,7 +2,7 @@ import { Home, ChevronRight } from 'lucide-react';
 import { useFileSystemStore } from '../../stores/fileSystemStore';
 
 export function Breadcrumb() {
-  const { selectedPath, selectPath, expandDir, rootDir } = useFileSystemStore();
+  const { lastSelectedPath: selectedPath, selectPath, expandDir, rootDir } = useFileSystemStore();
 
   if (!selectedPath) return null;
 

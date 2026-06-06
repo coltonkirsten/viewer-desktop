@@ -53,7 +53,9 @@ export interface GraphViewState {
 }
 
 // React Flow node data
-export interface DependencyNodeData {
+// Defined as a type alias (not interface) so it carries an implicit index
+// signature and satisfies @xyflow/react's `Node<T extends Record<string, unknown>>`.
+export type DependencyNodeData = {
   label: string;
   extension: string;
   isExternal: boolean;
@@ -61,4 +63,4 @@ export interface DependencyNodeData {
   importCount: number;
   importedByCount: number;
   depth: number;
-}
+};

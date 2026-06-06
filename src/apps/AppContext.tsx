@@ -59,6 +59,8 @@ export function AppProvider({ children, windowId, tabId }: AppProviderProps) {
         }] : undefined,
         position: { x: 100, y: 100 },
         size: { width: 800, height: 600 },
+        isMinimized: false,
+        isMaximized: false,
       });
     },
 
@@ -94,6 +96,7 @@ export function AppProvider({ children, windowId, tabId }: AppProviderProps) {
 /**
  * Hook to access viewer APIs from within an app
  */
+// eslint-disable-next-line react-refresh/only-export-components -- hook co-located with its provider by design
 export function useAppContext(): AppContextValue {
   const context = useContext(AppContext);
   if (!context) {

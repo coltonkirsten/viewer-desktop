@@ -259,6 +259,7 @@ export function MermaidDiagram({ code, id }: MermaidDiagramProps) {
   // Reset zoom/pan when closing expanded view
   useEffect(() => {
     if (!isExpanded) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setZoom(100);
       setPan({ x: 0, y: 0 });
     }

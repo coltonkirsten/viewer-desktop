@@ -16,7 +16,6 @@ export function WaveformVisualizer({
   width = 400,
   height = 120,
   type = 'both',
-  color = 'var(--holo-accent)',
   backgroundColor = 'rgba(0,0,0,0.3)',
   lineWidth = 2,
 }: WaveformVisualizerProps) {
@@ -24,6 +23,7 @@ export function WaveformVisualizer({
   const animationRef = useRef<number | null>(null);
   const [isActive, setIsActive] = useState(false);
 
+  // `draw` self-schedules via requestAnimationFrame (recursive animation loop).
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -36,6 +36,7 @@ export function WaveformVisualizer({
       analyser = getAnalyser();
     } catch {
       // Audio context not initialized yet
+      // eslint-disable-next-line react-hooks/immutability
       animationRef.current = requestAnimationFrame(draw);
       return;
     }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect, useState } from 'react';
 
 interface UseDragOptions {
   onDrag: (delta: { x: number; y: number }) => void;
@@ -7,7 +7,10 @@ interface UseDragOptions {
 }
 
 export function useDrag({ onDrag, onDragStart, onDragEnd }: UseDragOptions) {
-  const isDragging = useRef(false);
+  // Ref drives the move handler (no re-render per move); state exposes the
+  // dragging flag to consumers for styling.
+  const isDraggingRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const startPos = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = useCallback(
@@ -15,7 +18,8 @@ export function useDrag({ onDrag, onDragStart, onDragEnd }: UseDragOptions) {
       // Only left mouse button
       if (e.button !== 0) return;
 
-      isDragging.current = true;
+      isDraggingRef.current = true;
+      setIsDragging(true);
       startPos.current = { x: e.clientX, y: e.clientY };
       onDragStart?.();
 
@@ -26,7 +30,7 @@ export function useDrag({ onDrag, onDragStart, onDragEnd }: UseDragOptions) {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
+      if (!isDraggingRef.current) return;
 
       const delta = {
         x: e.clientX - startPos.current.x,
@@ -38,8 +42,9 @@ export function useDrag({ onDrag, onDragStart, onDragEnd }: UseDragOptions) {
     };
 
     const handleMouseUp = () => {
-      if (isDragging.current) {
-        isDragging.current = false;
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsDragging(false);
         onDragEnd?.();
       }
     };
@@ -53,5 +58,5 @@ export function useDrag({ onDrag, onDragStart, onDragEnd }: UseDragOptions) {
     };
   }, [onDrag, onDragEnd]);
 
-  return { handleMouseDown };
+  return { handleMouseDown, isDragging };
 }

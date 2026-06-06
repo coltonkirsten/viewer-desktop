@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, memo } from 'react';
 
-interface JsonSchema {
+export interface JsonSchema {
   type?: string;
   properties?: Record<string, JsonSchema>;
   required?: string[];
@@ -170,6 +170,7 @@ export function SchemaForm({ schema, onSubmit, submitLabel = 'Submit', loading }
 
   // Reset form when schema changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setValues({});
   }, [schema]);
 

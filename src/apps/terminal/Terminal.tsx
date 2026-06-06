@@ -20,19 +20,20 @@ export function Terminal({ filePath: sessionId, isActive }: AppProps) {
   // Validate/create session on mount
   useEffect(() => {
     if (!sessionId) return;
+    const sid = sessionId;
 
     let cancelled = false;
 
     async function ensureSession() {
       try {
         // Check if session exists
-        const existingSession = await window.electron.terminal.getSession(sessionId);
+        const existingSession = await window.electron.terminal.getSession(sid);
 
         if (cancelled) return;
 
         if (existingSession) {
           // Session exists, use it
-          setActiveSessionId(sessionId);
+          setActiveSessionId(sid);
         } else {
           // Session doesn't exist (app was restarted), create new one
           const newSession = await window.electron.terminal.create();

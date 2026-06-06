@@ -9,11 +9,8 @@ import {
   Upload,
   LayoutGrid,
   Settings,
-  Undo,
-  Redo,
   ZoomIn,
   ZoomOut,
-  Maximize2,
 } from 'lucide-react';
 import { useGraphStore } from '../../store/graphStore';
 import { NODE_TYPES } from '../../constants';

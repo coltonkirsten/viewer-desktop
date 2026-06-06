@@ -12,7 +12,7 @@ export function AirplanePhysics({ filePath, isActive }: AppProps) {
   const { fileApi, setDirty } = useAppContext();
   const [state, setState] = useState<AirplaneState>(DEFAULT_STATE);
   const [isLoading, setIsLoading] = useState(!!filePath);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [, setHasUnsavedChanges] = useState(false);
 
   // Load file on mount
   useEffect(() => {

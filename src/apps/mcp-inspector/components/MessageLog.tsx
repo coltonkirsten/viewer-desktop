@@ -34,13 +34,6 @@ function formatTime(timestamp: number): string {
   });
 }
 
-function getMethodName(message: McpMessage['message']): string {
-  if ('method' in message) {
-    return message.method;
-  }
-  return 'response';
-}
-
 function getMessageSummary(message: McpMessage['message']): string {
   if ('method' in message) {
     return message.method;

@@ -1,4 +1,4 @@
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, type JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
@@ -204,10 +204,10 @@ function ToolbarButton({
   );
 }
 
-function parseContent(content: string): any {
+function parseContent(content: string): string | JSONContent {
   if (!content) return '';
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(content) as JSONContent;
     // Check if it's TipTap JSON format
     if (parsed.type === 'doc' && Array.isArray(parsed.content)) {
       return parsed;
@@ -221,16 +221,17 @@ function parseContent(content: string): any {
 }
 
 // Helper to extract checklist progress from TipTap JSON
+// eslint-disable-next-line react-refresh/only-export-components -- helper co-located with the editor it supports
 export function getChecklistProgress(content: string): { completed: number; total: number } | null {
   if (!content) return null;
   try {
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(content) as JSONContent;
     if (parsed.type !== 'doc') return null;
 
     let completed = 0;
     let total = 0;
 
-    function traverse(node: any) {
+    function traverse(node: JSONContent) {
       if (node.type === 'taskItem') {
         total++;
         if (node.attrs?.checked) {

@@ -20,7 +20,8 @@ interface CustomNodeData extends GraphNode {
   isEdgeSource?: boolean;  // Highlighted as source in edge creation mode
 }
 
-function CustomNodeComponent({ data, selected }: NodeProps<CustomNodeData>) {
+function CustomNodeComponent({ data: rawData, selected }: NodeProps) {
+  const data = rawData as unknown as CustomNodeData;
   const [isHovered, setIsHovered] = useState(false);
 
   const categories = useGraphStore((s) => s.categories);

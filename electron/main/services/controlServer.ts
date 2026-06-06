@@ -17,13 +17,11 @@ export class ControlServer {
   private server: http.Server | null = null;
   private port: number;
   private getMainWindow: () => BrowserWindow | null;
-  private getRootDir: () => string | null;
   private bridgeReady = false;
 
   constructor(options: ControlServerOptions) {
     this.port = options.port || parseInt(process.env.VIEWER_CONTROL_PORT || '7434', 10);
     this.getMainWindow = options.getMainWindow;
-    this.getRootDir = options.getRootDir;
 
     // Listen for bridge ready signal from renderer
     ipcMain.handle('control:bridge-ready', () => {

@@ -160,15 +160,17 @@ export function DictationOverlay() {
 /**
  * Simple animated waveform visualization
  */
+const WAVEFORM_BAR_HEIGHTS = [60, 90, 45, 75, 50];
+
 function AudioWaveform() {
   return (
     <div className="flex items-center gap-0.5 h-4">
-      {[0, 1, 2, 3, 4].map((i) => (
+      {WAVEFORM_BAR_HEIGHTS.map((height, i) => (
         <div
           key={i}
           className="w-1 bg-red-400 rounded-full animate-pulse"
           style={{
-            height: `${Math.random() * 100}%`,
+            height: `${height}%`,
             animationDelay: `${i * 0.1}s`,
             animationDuration: '0.5s',
           }}

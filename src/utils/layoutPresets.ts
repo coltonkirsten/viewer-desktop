@@ -210,7 +210,6 @@ function calculateThirdsLayout(
   // Extra windows: split the columns vertically
   if (windows.length > 3) {
     const extras = windows.slice(3);
-    const col = 0; // Stack extras in first column
     const colHeight = (container.height - GAP * 3) / 2;
 
     // Resize first window to half height
